@@ -1,5 +1,5 @@
 /*
-    FreeRTOS V8.2.3 - Copyright (C) 2015 Real Time Engineers Ltd.
+    FreeRTOS V9.0.0 - Copyright (C) 2016 Real Time Engineers Ltd.
     All rights reserved
 
     VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
@@ -94,6 +94,8 @@
 #endif
 
 #define configUSE_PREEMPTION                     1
+#define configSUPPORT_STATIC_ALLOCATION          0
+#define configSUPPORT_DYNAMIC_ALLOCATION         1
 #define configUSE_IDLE_HOOK                      0
 #define configUSE_TICK_HOOK                      0
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
@@ -132,7 +134,6 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelayUntil             1
 #define INCLUDE_vTaskDelay                  1
 #define INCLUDE_xTaskGetSchedulerState      1
-
 #define INCLUDE_xQueueGetMutexHolder        1
 #define INCLUDE_xSemaphoreGetMutexHolder    1
 #define INCLUDE_xTaskGetCurrentTaskHandle   1

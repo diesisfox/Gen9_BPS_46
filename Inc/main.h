@@ -97,6 +97,7 @@
 #define BSD_GPIO_Port GPIOB
 #define MCP2_CS_Pin GPIO_PIN_8
 #define MCP2_CS_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
