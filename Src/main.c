@@ -224,8 +224,8 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
-//  MX_CAN1_Init();
-//  MX_CAN2_Init();
+  MX_CAN1_Init();
+  MX_CAN2_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_WWDG_Init();
@@ -316,15 +316,15 @@ int main(void)
   Can_ProcessorHandle = osThreadCreate(osThread(Can_Processor), NULL);
 
   /* definition and creation of RT */
-  osThreadDef(RT, doRT, osPriorityIdle, 0, 512);
+  osThreadDef(RT, doRT, osPriorityHigh, 0, 512);
   RTHandle = osThreadCreate(osThread(RT), NULL);
 
   /* definition and creation of SMT */
-  osThreadDef(SMT, doSMT, osPriorityIdle, 0, 512);
+  osThreadDef(SMT, doSMT, osPriorityAboveNormal, 0, 512);
   SMTHandle = osThreadCreate(osThread(SMT), NULL);
 
   /* definition and creation of TMT */
-  osThreadDef(TMT, doTMT, osPriorityIdle, 0, 512);
+  osThreadDef(TMT, doTMT, osPriorityAboveNormal, 0, 512);
   TMTHandle = osThreadCreate(osThread(TMT), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -732,10 +732,10 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, FAN_Pin|EN1_Pin|S2_Pin|S1_Pin 
-                          |S3_Pin|S0_Pin|BSD_Pin, GPIO_PIN_RESET);
+                          |S3_Pin|S0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(MCP2_CS_GPIO_Port, MCP2_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, BSD_Pin|MCP2_CS_Pin, GPIO_PIN_SET);
 
 }
 
