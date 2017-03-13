@@ -48,6 +48,7 @@
 /* USER CODE BEGIN Includes */
 #include "can.h"
 #include "serial.h"
+#include "ts_lib.h"
 #include "nodeMiscHelpers.h"
 #include "nodeConf.h"
 #include "../../CAN_ID.h"
@@ -204,9 +205,10 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	//#define DISABLE_RT
-	#define DISABLE_SMT
-	#define DISABLE_TMT
+#define DISABLE_RT
+#define DISABLE_SMT
+//#define DISABLE_TMT
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -238,6 +240,10 @@ int main(void)
     // TODO: Set node-specific CAN filters
     bxCan_addMaskedFilterStd(0,0,0); // Filter: Status word group (ignore nodeID)
     bxCan_addMaskedFilterExt(0,0,0);
+
+#ifndef DISABLE_TMT
+    Temp_begin(&hadc1);
+#endif
 
   #ifndef DISABLE_SMT
     /*
@@ -443,7 +449,7 @@ static void MX_ADC1_Init(void)
     */
   sConfig.Channel = ADC_CHANNEL_6;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -654,12 +660,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : MCP1_CS_Pin EN2_Pin */
-  GPIO_InitStruct.Pin = MCP1_CS_Pin|EN2_Pin;
+  /*Configure GPIO pin : MCP1_CS_Pin */
+  GPIO_InitStruct.Pin = MCP1_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(MCP1_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
@@ -677,18 +683,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : EN1_Pin MCP2_CS_Pin */
-  GPIO_InitStruct.Pin = EN1_Pin|MCP2_CS_Pin;
+  /*Configure GPIO pin : EN1_Pin */
+  GPIO_InitStruct.Pin = EN1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(EN1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DR2_Pin DR1_Pin */
   GPIO_InitStruct.Pin = DR2_Pin|DR1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : EN2_Pin */
+  GPIO_InitStruct.Pin = EN2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(EN2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LTC_CS_Pin */
   GPIO_InitStruct.Pin = LTC_CS_Pin;
@@ -704,18 +717,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
   HAL_GPIO_Init(BSD_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, MCP1_CS_Pin|EN2_Pin|LTC_CS_Pin, GPIO_PIN_SET);
+  /*Configure GPIO pin : MCP2_CS_Pin */
+  GPIO_InitStruct.Pin = MCP2_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(MCP2_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, MCP1_CS_Pin|LTC_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, FAN_Pin|S2_Pin|S1_Pin|S3_Pin 
-                          |S0_Pin|BSD_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|EN2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, EN1_Pin|MCP2_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, FAN_Pin|EN1_Pin|S2_Pin|S1_Pin 
+                          |S3_Pin|S0_Pin|BSD_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(MCP2_CS_GPIO_Port, MCP2_CS_Pin, GPIO_PIN_SET);
 
 }
 
@@ -731,6 +751,7 @@ void doApplication(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+	  if(Serial2_available()) Serial2_write(Serial2_read());
     osDelay(1);
   }
   /* USER CODE END 5 */ 
@@ -759,8 +780,6 @@ void doRT(void const * argument)
 	newFrame.isExt = 0;
 	newFrame.isRemote = 0;
 	newFrame.id = 0x201;
-
-	static uint8_t ohno[] = "oh no!\n";
 
   /* Infinite loop */
   for(;;)
@@ -921,15 +940,47 @@ void doTMT(void const * argument)
 {
   /* USER CODE BEGIN doTMT */
 #ifndef DISABLE_TMT
+
+	static Can_frame_t newFrame;
+	newFrame.dlc = 8;
+	newFrame.isRemote = 0;
+	newFrame.isExt = 0;
+
+	static uint8_t intBuf[10];
+
   /* Infinite loop */
   for(;;)
   {
-	  if((selfStatusWord & 0x07) == ACTIVE){
-	  //Michael Pls
+//	  if((selfStatusWord & 0x07) == ACTIVE){
+		  uint16_t data1, data2;
+		  for(int i=0; 2*i<TEMP_CHANNELS; i++){
+			  data1 = getReading(2*i);
+			  if(data1 >= OVER_TEMPERATURE) assert_bps_fault(tempOffset+i*2, data1);
+			  if(data1 <= UNDER_TEMPERATURE) assert_bps_fault(tempOffset+i*2, data1);
+			  data2 = getReading(2*i+1);
+			  if(data2 >= OVER_TEMPERATURE) assert_bps_fault(tempOffset+1+i*2, data2);
+			  if(data2 <= UNDER_TEMPERATURE) assert_bps_fault(tempOffset+1+i*2, data2);
+
+			  Serial2_writeBytes(intBuf, intToDec(data1, intBuf));
+			  Serial2_write(',');
+			  Serial2_writeBytes(intBuf, intToDec(data2, intBuf));
+			  Serial2_write(',');
+
+//			  newFrame.id = tempOffset + i;
+//			  newFrame.Data[1] = (data1>>8)&0xff;
+//			  newFrame.Data[2] = (data1>>4)&0xff;
+//			  newFrame.Data[3] = (data1>>0)&0xff;
+//			  newFrame.Data[5] = (data1>>8)&0xff;
+//			  newFrame.Data[6] = (data1>>4)&0xff;
+//			  newFrame.Data[7] = (data1>>0)&0xff;
+//
+//			  bxCan_sendFrame(&newFrame);
+		  }
+		  Serial2_write('\n');
 		  osDelay(TMT_Interval);
-	  }else{
-		  osDelay(1);
-	  }
+//	  }else{
+//		  osDelay(1);
+//	  }
   }
 
 #else

@@ -129,6 +129,8 @@ void fault_save_data(){
 
 void assert_bps_fault(uint16_t addr, uint32_t value){	//addr and value of out of line reading
 	//what the name says
+	vTaskPrioritySet(NULL, tskIDLE_PRIORITY + configMAX_PRIORITIES - 1);
+
 	fault_save_data();
 
 	// Broadcast bps fault to main CAN
@@ -148,5 +150,43 @@ void assert_bps_fault(uint16_t addr, uint32_t value){	//addr and value of out of
 
 	//assert signal
 	HAL_GPIO_WritePin(BSD_GPIO_Port, BSD_Pin, RESET);
+}
+
+uint8_t valToHex(uint8_t i){
+	return (i<=9 ? '0'+i : 'A'+i-10);
+}
+
+uint8_t HexToVal(uint8_t i){//0xff = invalid char
+	if(i>='0' && i<='9'){
+		return i-'0';
+	}else if(i>='A' && i<='F'){
+		return i-'A'+10;
+	}else if(i>='a' && i<='f'){
+		return i-'a'+10;
+	}
+	return 0xff;
+}
+
+uint8_t intToDec(uint32_t input, uint8_t *str){ //returns length. Only does positives.
+	uint8_t length = 0;
+	uint8_t output[10];
+	while(input/10){
+		length++;
+		output[10-length] = valToHex(input%10);
+		input/=10;
+	}
+	length++;
+	output[10-length] = valToHex(input);
+	for(int i=0; i<length; i++){
+		str[i] = output[10-length+i];
+	}
+	return length;
+}
+
+void intToHex(uint32_t input, uint8_t *str, int length){
+	for(int i=0; i<length; i++){
+		str[length-1-i]=valToHex(input&0x0F);
+		input = input>>4;
+	}
 }
 

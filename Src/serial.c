@@ -24,6 +24,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 static uint8_t *Serial2_getHead(){ //Volatile! Avoid use as much as possible!
 	return Serial2_buffer + SERIAL2_BUFFER_SIZE - (hdma_usart2_rx.Instance->NDTR & 0xffff);
+//	return hdma_usart2_rx.Instance->M0AR;
 }
 
 int Serial2_available(){

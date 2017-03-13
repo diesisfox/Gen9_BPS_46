@@ -51,4 +51,9 @@ void soft_shutdown(void(*usr_clbk)());
 void assert_bps_fault(uint16_t addr, uint32_t value);
 void fault_save_data();
 
+uint8_t valToHex(uint8_t i);
+uint8_t HexToVal(uint8_t i);
+uint8_t intToDec(uint32_t input, uint8_t *str); //returns length. Only does positives.
+void intToHex(uint32_t input, uint8_t *str, int length);
+
 #endif /* NODEMISCHELPERS_H_ */
