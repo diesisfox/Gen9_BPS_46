@@ -23,7 +23,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 			uint8_t channel = 16*i+convInProg;
 			aggregate[channel] += dmaBuffer[i];
 			sampleCount[channel]++;
-			if(aggregate[channel] > 0xFFFF0000){
+			if(aggregate[channel] >= 0xFFFF0000){
 				aggregate[channel] /= sampleCount[channel];
 				sampleCount[channel] = 1;
 			}

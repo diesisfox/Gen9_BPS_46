@@ -337,7 +337,8 @@ uint8_t mcp3909_wakeup(MCP3909HandleTypeDef * hmcp){
 		delayUs(T_POR);
 
 		// Enable GPIO DR Interrupt
-		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+//		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 		return pdTRUE;
 	}
 	return pdFALSE;

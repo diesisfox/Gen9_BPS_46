@@ -143,7 +143,8 @@ void TmrSendHB(void const * argument);
 // Data Ready pin triggered callback (PA1)
 void HAL_GPIO_EXTI_Callback(uint16_t pinNum){
 	if(pinNum == DR1_Pin){
-		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+//		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+		HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
 		mcp3909_readAllChannels(&hmcp1,hmcp1.pRxBuf);
 	}
 }
@@ -192,7 +193,8 @@ void EM_Init(){
 	hmcp1.pRxBuf = mcpRxBuf;
 	hmcp1.pTxBuf = mcpTxBuf;
 
-	HAL_NVIC_SetPriority(EXTI1_IRQn, 6, 0); // set DR pin interrupt priority
+//	HAL_NVIC_SetPriority(EXTI1_IRQn, 6, 0); // set DR pin interrupt priority
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
 	mcp3909_init(&hmcp1);
 }
 /* USER CODE END PFP */
@@ -205,9 +207,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-#define DISABLE_RT
+//#define DISABLE_RT
 #define DISABLE_SMT
-//#define DISABLE_TMT
+#define DISABLE_TMT
 
   /* USER CODE END 1 */
 
@@ -231,6 +233,8 @@ int main(void)
   MX_WWDG_Init();
 
   /* USER CODE BEGIN 2 */
+//  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+
   Serial2_begin();
     static uint8_t hbmsg[] = "Booting... \n";
     Serial2_writeBuf(hbmsg);
@@ -737,6 +741,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(MCP2_CS_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+//  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+//  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
@@ -779,55 +787,40 @@ void doRT(void const * argument)
 	static Can_frame_t newFrame;
 	newFrame.isExt = 0;
 	newFrame.isRemote = 0;
-	newFrame.id = 0x201;
+
+	static uint8_t intBuf[10];
+//	osDelay(50);
 
   /* Infinite loop */
   for(;;)
   {
-	  if((selfStatusWord & 0x07) == ACTIVE){
+//	  if((selfStatusWord & 0x07) == ACTIVE){
 		mcp3909_wakeup(&hmcp1);
 		osDelay(1);
+
 		xSemaphoreTake(mcp3909_RXHandle, portMAX_DELAY);
 		mcp3909_parseChannelData(&hmcp1);
+
+		for(int i=0; i<3; i++){
+			newFrame.id = i<1 ? battPwr : (i<2 ? motorPwr : lpBusPwr);
+			for(int j=0; j<4; j++){
+				newFrame.Data[2*j] = hmcp1.registers[2*i] >> 24-8*j;
+				newFrame.Data[2*j+1] = hmcp1.registers[2*i+1] >> 24-8*j;
+			}
+			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i], intBuf));
+			Serial2_write(',');
+			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i+i], intBuf));
+			Serial2_write(',');
+//			bxCan_sendFrame(&newFrame);
+		}
+		Serial2_write('\n');
 		osDelay(1);
 		// XXX: Energy metering algorithm
 		mcp3909_sleep(&hmcp1);
-
-		Serial2_writeBuf("oh no!\n");
-
-//		for(uint8_t i=0; i<3; i++){
-//			for(uint8_t j=0; j<12; j+=4){
-//				newFrame.id = voltOffset+i*3+j/4;
-//				newFrame.Data[0] = hbms1.board[i].CVR[j+0] >> 8;
-//				newFrame.Data[1] = hbms1.board[i].CVR[j+0] & 0xff;
-//				newFrame.Data[2] = hbms1.board[i].CVR[j+1] >> 8;
-//				newFrame.Data[3] = hbms1.board[i].CVR[j+1] & 0xff;
-//				newFrame.Data[4] = hbms1.board[i].CVR[j+2] >> 8;
-//				newFrame.Data[5] = hbms1.board[i].CVR[j+2] & 0xff;
-//				newFrame.Data[6] = hbms1.board[i].CVR[j+3] >> 8;
-//				newFrame.Data[7] = hbms1.board[i].CVR[j+3] & 0xff;
-//				if(bxCan_sendFrame(&newFrame) != 0){
-//					Serial2_writeBuf(ohno);
-//				}
-////				static uint8_t msg[3];
-////				msg[0] = hbms1.board[i].CVR[j+0] >> 8;
-////				msg[1] = hbms1.board[i].CVR[j+0] & 0xff;
-////				Serial2_writeBuf(msg);
-//				for(uint8_t k=0; k<4; k++){
-//					if(hbms1.board[i].CVR[j+k] > vovTo100uV(VOV) || hbms1.board[i].CVR[j+k] < vovTo100uV(VUV)){
-//						Serial2_writeBuf(ohno);
-//						assert_bps_fault(i*3+j/4, hbms1.board[i].CVR[j+k]);
-//					}
-//				}
-//			}
-//			osDelay(1);
-//		}
-
-
 		osDelay(RT_Interval);
-	  }else{
-		  osDelay(1);
-	  }
+//	  }else{
+//		  osDelay(1);
+//	  }
   }
 #else
   for(;;){
@@ -952,28 +945,18 @@ void doTMT(void const * argument)
   for(;;)
   {
 //	  if((selfStatusWord & 0x07) == ACTIVE){
-		  uint16_t data1, data2;
-		  for(int i=0; 2*i<TEMP_CHANNELS; i++){
-			  data1 = getReading(2*i);
-			  if(data1 >= OVER_TEMPERATURE) assert_bps_fault(tempOffset+i*2, data1);
-			  if(data1 <= UNDER_TEMPERATURE) assert_bps_fault(tempOffset+i*2, data1);
-			  data2 = getReading(2*i+1);
-			  if(data2 >= OVER_TEMPERATURE) assert_bps_fault(tempOffset+1+i*2, data2);
-			  if(data2 <= UNDER_TEMPERATURE) assert_bps_fault(tempOffset+1+i*2, data2);
-
-			  Serial2_writeBytes(intBuf, intToDec(data1, intBuf));
-			  Serial2_write(',');
-			  Serial2_writeBytes(intBuf, intToDec(data2, intBuf));
-			  Serial2_write(',');
-
+		  uint16_t data;
+		  for(int i=0; 4*i<TEMP_CHANNELS; i++){
+			  for(int j=0; j<4; j++){
+				  data = getReading(4*i+j);
+				  if(data >= OVER_TEMPERATURE || data <= UNDER_TEMPERATURE)
+					  assert_bps_fault(tempOffset+i*4+j, data);
+				  Serial2_writeBytes(intBuf, intToDec(data, intBuf));
+				  Serial2_write(',');
+				  newFrame.Data[2*j] = data>>8;
+				  newFrame.Data[2*j+1] = data&0xff;
+			  }
 //			  newFrame.id = tempOffset + i;
-//			  newFrame.Data[1] = (data1>>8)&0xff;
-//			  newFrame.Data[2] = (data1>>4)&0xff;
-//			  newFrame.Data[3] = (data1>>0)&0xff;
-//			  newFrame.Data[5] = (data1>>8)&0xff;
-//			  newFrame.Data[6] = (data1>>4)&0xff;
-//			  newFrame.Data[7] = (data1>>0)&0xff;
-//
 //			  bxCan_sendFrame(&newFrame);
 		  }
 		  Serial2_write('\n');
