@@ -144,8 +144,11 @@ void TmrSendHB(void const * argument);
 void HAL_GPIO_EXTI_Callback(uint16_t pinNum){
 	if(pinNum == DR1_Pin){
 //		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
 		HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
 		mcp3909_readAllChannels(&hmcp1,hmcp1.pRxBuf);
+		xSemaphoreGiveFromISR(mcp3909_DRHandle, NULL);
 	}
 }
 
@@ -194,7 +197,7 @@ void EM_Init(){
 	hmcp1.pTxBuf = mcpTxBuf;
 
 //	HAL_NVIC_SetPriority(EXTI1_IRQn, 6, 0); // set DR pin interrupt priority
-	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+//	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
 	mcp3909_init(&hmcp1);
 }
 /* USER CODE END PFP */
@@ -207,9 +210,10 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//#define DISABLE_RT
-#define DISABLE_SMT
+#define DISABLE_RT
+//#define DISABLE_SMT
 #define DISABLE_TMT
+#define DISABLE_CAN
 
   /* USER CODE END 1 */
 
@@ -743,8 +747,8 @@ static void MX_GPIO_Init(void)
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
-//  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-//  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -759,8 +763,10 @@ void doApplication(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  if(Serial2_available()) Serial2_write(Serial2_read());
-    osDelay(1);
+	  while(Serial2_available()){
+		  Serial2_write(Serial2_read());
+	  }
+	  osDelay(1);
   }
   /* USER CODE END 5 */ 
 }
@@ -773,7 +779,11 @@ void doProcessCan(void const * argument)
 	for(;;){
 			// Wrapper function for the CAN Processing Logic
 			// Handles all CAN Protocol Suite based responses and tasks
+#ifndef DISABLE_CAN
 			Can_Processor();
+#else
+			osDelay(10000);
+#endif
 		}
   /* USER CODE END doProcessCan */
 }
@@ -784,43 +794,54 @@ void doRT(void const * argument)
   /* USER CODE BEGIN doRT */
 #ifndef DISABLE_RT
 
+#ifndef DISABLE_CAN
 	static Can_frame_t newFrame;
 	newFrame.isExt = 0;
 	newFrame.isRemote = 0;
+#else
+	osDelay(10);
+#endif
 
 	static uint8_t intBuf[10];
+	static uint32_t previousWaitTime;
 //	osDelay(50);
 
   /* Infinite loop */
   for(;;)
   {
-//	  if((selfStatusWord & 0x07) == ACTIVE){
+#ifndef DISABLE_CAN
+	  if((selfStatusWord & 0x07) == ACTIVE){
+#endif
+	  	previousWaitTime = osKernelSysTick();
 		mcp3909_wakeup(&hmcp1);
-		osDelay(1);
-
+		xSemaphoreTake(mcp3909_DRHandle, portMAX_DELAY);
 		xSemaphoreTake(mcp3909_RXHandle, portMAX_DELAY);
 		mcp3909_parseChannelData(&hmcp1);
 
 		for(int i=0; i<3; i++){
+#ifndef DISABLE_CAN
 			newFrame.id = i<1 ? battPwr : (i<2 ? motorPwr : lpBusPwr);
 			for(int j=0; j<4; j++){
-				newFrame.Data[2*j] = hmcp1.registers[2*i] >> 24-8*j;
-				newFrame.Data[2*j+1] = hmcp1.registers[2*i+1] >> 24-8*j;
+				newFrame.Data[2*j] = hmcp1.registers[2*i] >> (24-8*j);
+				newFrame.Data[2*j+1] = hmcp1.registers[2*i+1] >> (24-8*j);
 			}
+			bxCan_sendFrame(&newFrame);
+#endif
 			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i], intBuf));
 			Serial2_write(',');
-			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i+i], intBuf));
+			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i+1], intBuf));
 			Serial2_write(',');
-//			bxCan_sendFrame(&newFrame);
 		}
 		Serial2_write('\n');
-		osDelay(1);
 		// XXX: Energy metering algorithm
 		mcp3909_sleep(&hmcp1);
-		osDelay(RT_Interval);
-//	  }else{
-//		  osDelay(1);
-//	  }
+		osDelayUntil(&previousWaitTime, RT_Interval);
+//		osDelay(RT_Interval);
+#ifndef DISABLE_CAN
+	  }else{
+		  osDelay(1);
+	  }
+#endif
   }
 #else
   for(;;){
@@ -836,15 +857,21 @@ void doSMT(void const * argument)
   /* USER CODE BEGIN doSMT */
 #ifndef DISABLE_SMT
 
+#ifndef DISABLE_CAN
 	static Can_frame_t newFrame;
 	newFrame.dlc = 8;
 	newFrame.isExt = 0;
 	newFrame.isRemote = 0;
+#else
+	osDelay(10);
+#endif
 
   /* Infinite loop */
   for(;;)
   {
+#ifndef DISABLE_CAN
 	  if((selfStatusWord & 0x07) == ACTIVE){
+#endif
 		  int8_t success = ltc68041_clearCell(&hbms1);
 		  osDelay(3);
 		  success = ltc68041_startCVConv(&hbms1);
@@ -882,6 +909,7 @@ void doSMT(void const * argument)
 
 		for(uint8_t i=0; i<3; i++){
 			for(uint8_t j=0; j<12; j+=4){
+#ifndef DISABLE_CAN
 				newFrame.id = voltOffset+i*3+j/4;
 				newFrame.Data[0] = hbms1.board[i].CVR[j+0] >> 8;
 				newFrame.Data[1] = hbms1.board[i].CVR[j+0] & 0xff;
@@ -894,10 +922,11 @@ void doSMT(void const * argument)
 				if(bxCan_sendFrame(&newFrame) != 0){
 					Serial2_writeBuf(ohno);
 				}
-//				static uint8_t msg[3];
-//				msg[0] = hbms1.board[i].CVR[j+0] >> 8;
-//				msg[1] = hbms1.board[i].CVR[j+0] & 0xff;
-//				Serial2_writeBuf(msg);
+#endif
+				static uint8_t msg[3];
+				msg[0] = hbms1.board[i].CVR[j+0] >> 8;
+				msg[1] = hbms1.board[i].CVR[j+0] & 0xff;
+				Serial2_writeBuf(msg);
 				for(uint8_t k=0; k<4; k++){
 					if(hbms1.board[i].CVR[j+k] > vovTo100uV(VOV) || hbms1.board[i].CVR[j+k] < vovTo100uV(VUV)){
 						Serial2_writeBuf(ohno);
@@ -916,9 +945,11 @@ void doSMT(void const * argument)
 //		}
 
 		osDelay(SMT_Interval - (8+TOTAL_IC*4));
+#ifndef DISABLE_CAN
 	  }else{
 		  osDelay(1);
 	  }
+#endif
   }
 #else
   for(;;){
@@ -934,17 +965,23 @@ void doTMT(void const * argument)
   /* USER CODE BEGIN doTMT */
 #ifndef DISABLE_TMT
 
+#ifndef DISABLE_CAN
 	static Can_frame_t newFrame;
 	newFrame.dlc = 8;
 	newFrame.isRemote = 0;
 	newFrame.isExt = 0;
+#else
+	osDealy(10);
+#endif
 
 	static uint8_t intBuf[10];
 
   /* Infinite loop */
   for(;;)
   {
-//	  if((selfStatusWord & 0x07) == ACTIVE){
+#ifndef DISABLE_CAN
+	  if((selfStatusWord & 0x07) == ACTIVE){
+#endif
 		  uint16_t data;
 		  for(int i=0; 4*i<TEMP_CHANNELS; i++){
 			  for(int j=0; j<4; j++){
@@ -953,17 +990,23 @@ void doTMT(void const * argument)
 					  assert_bps_fault(tempOffset+i*4+j, data);
 				  Serial2_writeBytes(intBuf, intToDec(data, intBuf));
 				  Serial2_write(',');
+#ifndef DISABLE_CAN
 				  newFrame.Data[2*j] = data>>8;
 				  newFrame.Data[2*j+1] = data&0xff;
+#endif
 			  }
-//			  newFrame.id = tempOffset + i;
-//			  bxCan_sendFrame(&newFrame);
+#ifndef DISABLE_CAN
+			  newFrame.id = tempOffset + i;
+			  bxCan_sendFrame(&newFrame);
+#endif
 		  }
 		  Serial2_write('\n');
 		  osDelay(TMT_Interval);
-//	  }else{
-//		  osDelay(1);
-//	  }
+#ifndef DISABLE_CAN
+	  }else{
+		  osDelay(1);
+	  }
+#endif
   }
 
 #else

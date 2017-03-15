@@ -230,7 +230,8 @@ uint8_t mcp3909_init(MCP3909HandleTypeDef * hmcp){
 
   // Channel pair phase delays
   // Set phase registers
-  bytesToReg(hmcp->phase, (hmcp->registers+PHASE));
+//  bytesToReg(hmcp->phase, (hmcp->registers+PHASE));
+  hmcp->registers[PHASE] = bytesToReg(hmcp->phase);
 
   // Channel specific settings:
   for(uint8_t i = 0; i < MAX_CHANNEL_NUM; i++){
@@ -284,7 +285,7 @@ uint8_t mcp3909_verify(MCP3909HandleTypeDef * hmcp){
 	uint32_t tempRegister = 0;
 	for(uint8_t i = PHASE; i < REGS_NUM; i++){
 		// Ignore the MOD register output values
-		bytesToReg((hmcp->pRxBuf) + (i - PHASE + 1) * REG_LEN + CTRL_LEN, &tempRegister);	// Assemble the bytes into register data
+		tempRegister = bytesToReg((hmcp->pRxBuf) + (i - PHASE + 1) * REG_LEN + CTRL_LEN);	// Assemble the bytes into register data
 		if(i == STATUS){
 			tempRegister &= ~(0x3F);
 		}
@@ -334,11 +335,15 @@ uint8_t mcp3909_wakeup(MCP3909HandleTypeDef * hmcp){
 
 	if(_mcp3909_SPI_WriteReg(hmcp, CONFIG)){
 		// Delay power on reset time
-		delayUs(T_POR);
+		delayUs(2*T_POR);
 
 		// Enable GPIO DR Interrupt
 //		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+		__HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
 		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+//		__HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
+//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
 		return pdTRUE;
 	}
 	return pdFALSE;
@@ -356,8 +361,8 @@ inline uint8_t mcp3909_readChannel(MCP3909HandleTypeDef * hmcp, uint8_t channelN
 	return mcp3909_SPI_ReadReg(hmcp, channelNum, buffer, CTRL_LEN+REG_LEN, READ_SINGLE);
 }
 
-inline void bytesToReg(uint8_t * byte, uint32_t * reg){
-	*reg =  ((byte[2] | (byte[1] << 8) | (byte[0] << 16))) & 0xFFFFFF;
+uint32_t bytesToReg(uint8_t * byte){
+	return ((byte[2] | (byte[1] << 8) | (byte[0] << 16)) & 0xFFFFFF);
 }
 
 inline void regToBytes(uint32_t * reg, uint8_t * bytes){
@@ -367,8 +372,8 @@ inline void regToBytes(uint32_t * reg, uint8_t * bytes){
 }
 
 inline void mcp3909_parseChannelData(MCP3909HandleTypeDef * hmcp){
-	for(uint8_t i = CHANNEL_0; i < CHANNEL_0+MAX_CHANNEL_NUM; i++){
-		bytesToReg((hmcp->pRxBuf) + REG_LEN * i+CTRL_LEN,((hmcp->registers) + i ));
+	for(uint8_t i = 0; i < MAX_CHANNEL_NUM; i++){
+		hmcp->registers[i] = bytesToReg((hmcp->pRxBuf)+REG_LEN*i+CTRL_LEN);
 	}
 }
 
