@@ -230,8 +230,8 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
-//  MX_CAN1_Init();
-//  MX_CAN2_Init();
+ // MX_CAN1_Init();
+ // MX_CAN2_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_WWDG_Init();
@@ -261,6 +261,9 @@ int main(void)
   //  ltc68041ChainInitStruct bmsInitParams[TOTAL_IC];
   //  LTC68041_Initialize(&hbms1, bmsInitParams);
     hbms1.hspi = &hspi3;
+
+    HAL_Delay(2);	// Empirically tested wait to correct SPI failing; see associated commit note
+
     if(ltc68041_Initialize(&hbms1) != 0){
   	  for(;;);
     }
