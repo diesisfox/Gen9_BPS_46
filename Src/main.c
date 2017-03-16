@@ -210,9 +210,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-#define DISABLE_RT
+//#define DISABLE_RT
 //#define DISABLE_SMT
-#define DISABLE_TMT
+//#define DISABLE_TMT
 #define DISABLE_CAN
 
   /* USER CODE END 1 */
@@ -237,8 +237,9 @@ int main(void)
   MX_WWDG_Init();
 
   /* USER CODE BEGIN 2 */
-//  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-
+  __HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
+  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+  __HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
   Serial2_begin();
     static uint8_t hbmsg[] = "Booting... \n";
     Serial2_writeBuf(hbmsg);
@@ -262,7 +263,7 @@ int main(void)
   //  LTC68041_Initialize(&hbms1, bmsInitParams);
     hbms1.hspi = &hspi3;
 
-    HAL_Delay(2);	// Empirically tested wait to correct SPI failing; see associated commit note
+    HAL_Delay(3);	// Empirically tested wait to correct SPI failing; see associated commit note
 
     if(ltc68041_Initialize(&hbms1) != 0){
   	  for(;;);
@@ -974,7 +975,7 @@ void doTMT(void const * argument)
 	newFrame.isRemote = 0;
 	newFrame.isExt = 0;
 #else
-	osDealy(10);
+	osDelay(10);
 #endif
 
 	static uint8_t intBuf[10];
