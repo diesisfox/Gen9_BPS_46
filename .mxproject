@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=/Users/frank/Desktop/Gen9_Git/Gen9_BPS_46/Inc
+HeaderPath=/Users/jamesliu/Development/STM32/Gen9_BPS_46/Inc
 HeaderFiles=FreeRTOSConfig.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=/Users/frank/Desktop/Gen9_Git/Gen9_BPS_46/Src
+SourcePath=/Users/jamesliu/Development/STM32/Gen9_BPS_46/Src
 SourceFiles=FreeRTOSConfig.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;freertos.c;stm32f4xx_it.c;stm32f4xx_hal_msp.c;stm32f4xx_hal_timebase_TIM.c;main.c;
 
 [PreviousLibFiles]

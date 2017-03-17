@@ -106,6 +106,8 @@ MCP3909HandleTypeDef hmcp1;
 uint8_t mcpRxBuf[REG_LEN * REGS_NUM];
 uint8_t mcpTxBuf[REG_LEN * REGS_NUM + CTRL_LEN];
 
+uint8_t init_Done = 0;
+
 // SW_Sentinel will fail the CC firmware check and result in node addition failure!
 const uint32_t firmwareString = 0x00000001;			// Firmware Version string
 const uint8_t selfNodeID = bps_nodeID;					// The nodeID of this node
@@ -142,13 +144,15 @@ void TmrSendHB(void const * argument);
 
 // Data Ready pin triggered callback (PA1)
 void HAL_GPIO_EXTI_Callback(uint16_t pinNum){
-	if(pinNum == DR1_Pin){
-//		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
-//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
-		HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
-		mcp3909_readAllChannels(&hmcp1,hmcp1.pRxBuf);
-		xSemaphoreGiveFromISR(mcp3909_DRHandle, NULL);
+	if(init_Done){
+		if(pinNum == DR1_Pin){
+	//		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+	//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+	//		HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+			mcp3909_readAllChannels(&hmcp1,hmcp1.pRxBuf);
+			xSemaphoreGiveFromISR(mcp3909_DRHandle, NULL);
+		}
 	}
 }
 
@@ -213,7 +217,7 @@ int main(void)
 //#define DISABLE_RT
 //#define DISABLE_SMT
 //#define DISABLE_TMT
-#define DISABLE_CAN
+//#define DISABLE_CAN
 
   /* USER CODE END 1 */
 
@@ -230,8 +234,8 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
- // MX_CAN1_Init();
- // MX_CAN2_Init();
+  MX_CAN1_Init();
+//  MX_CAN2_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_WWDG_Init();
@@ -240,6 +244,9 @@ int main(void)
   __HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
   HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
   __HAL_GPIO_EXTI_CLEAR_IT(DR1_Pin);
+
+  init_Done = 1;
+
   Serial2_begin();
     static uint8_t hbmsg[] = "Booting... \n";
     Serial2_writeBuf(hbmsg);
@@ -320,15 +327,15 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of Application */
-  osThreadDef(Application, doApplication, osPriorityNormal, 0, 512);
+  osThreadDef(Application, doApplication, osPriorityLow, 0, 512);
   ApplicationHandle = osThreadCreate(osThread(Application), NULL);
 
   /* definition and creation of Can_Processor */
-  osThreadDef(Can_Processor, doProcessCan, osPriorityBelowNormal, 0, 512);
+  osThreadDef(Can_Processor, doProcessCan, osPriorityAboveNormal, 0, 512);
   Can_ProcessorHandle = osThreadCreate(osThread(Can_Processor), NULL);
 
   /* definition and creation of RT */
-  osThreadDef(RT, doRT, osPriorityHigh, 0, 512);
+  osThreadDef(RT, doRT, osPriorityRealtime, 0, 512);
   RTHandle = osThreadCreate(osThread(RT), NULL);
 
   /* definition and creation of SMT */
@@ -336,7 +343,7 @@ int main(void)
   SMTHandle = osThreadCreate(osThread(SMT), NULL);
 
   /* definition and creation of TMT */
-  osThreadDef(TMT, doTMT, osPriorityAboveNormal, 0, 512);
+  osThreadDef(TMT, doTMT, osPriorityHigh, 0, 512);
   TMTHandle = osThreadCreate(osThread(TMT), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -345,7 +352,7 @@ int main(void)
 
   /* Create the queue(s) */
   /* definition and creation of mainCanTxQ */
-  osMessageQDef(mainCanTxQ, 32, Can_frame_t);
+  osMessageQDef(mainCanTxQ, 64, Can_frame_t);
   mainCanTxQHandle = osMessageCreate(osMessageQ(mainCanTxQ), NULL);
 
   /* definition and creation of mainCanRxQ */
@@ -493,7 +500,7 @@ static void MX_CAN1_Init(void)
 
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 5;
-  hcan1.Init.Mode = CAN_MODE_SILENT_LOOPBACK;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SJW = CAN_SJW_3TQ;
   hcan1.Init.BS1 = CAN_BS1_12TQ;
   hcan1.Init.BS2 = CAN_BS2_3TQ;
@@ -516,7 +523,7 @@ static void MX_CAN2_Init(void)
 
   hcan2.Instance = CAN2;
   hcan2.Init.Prescaler = 16;
-  hcan2.Init.Mode = CAN_MODE_NORMAL;
+  hcan2.Init.Mode = CAN_MODE_SILENT_LOOPBACK;
   hcan2.Init.SJW = CAN_SJW_1TQ;
   hcan2.Init.BS1 = CAN_BS1_1TQ;
   hcan2.Init.BS2 = CAN_BS2_1TQ;
@@ -767,10 +774,10 @@ void doApplication(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  while(Serial2_available()){
-		  Serial2_write(Serial2_read());
-	  }
-	  osDelay(1);
+//	  while(Serial2_available()){
+//		  Serial2_write(Serial2_read());
+//	  }
+	  osDelay(1000);
   }
   /* USER CODE END 5 */ 
 }
@@ -802,6 +809,7 @@ void doRT(void const * argument)
 	static Can_frame_t newFrame;
 	newFrame.isExt = 0;
 	newFrame.isRemote = 0;
+	newFrame.dlc = 8;
 #else
 	osDelay(10);
 #endif
@@ -839,6 +847,7 @@ void doRT(void const * argument)
 		Serial2_write('\n');
 		// XXX: Energy metering algorithm
 		mcp3909_sleep(&hmcp1);
+		HAL_WWDG_Refresh(&hwwdg);
 		osDelayUntil(&previousWaitTime, RT_Interval);
 //		osDelay(RT_Interval);
 #ifndef DISABLE_CAN
