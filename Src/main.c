@@ -69,7 +69,6 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
-CAN_HandleTypeDef hcan2;
 
 SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
@@ -127,7 +126,6 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_CAN2_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_WWDG_Init(void);
@@ -218,6 +216,7 @@ int main(void)
 //#define DISABLE_SMT
 //#define DISABLE_TMT
 //#define DISABLE_CAN
+#define DISABLE_SERIAL_OUT
 
   /* USER CODE END 1 */
 
@@ -235,7 +234,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
-//  MX_CAN2_Init();
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_WWDG_Init();
@@ -248,8 +246,7 @@ int main(void)
   init_Done = 1;
 
   Serial2_begin();
-    static uint8_t hbmsg[] = "Booting... \n";
-    Serial2_writeBuf(hbmsg);
+    Serial2_writeBuf("Booting... \n");
 
     ////*IF YOU GET HCAN1 NOT DEFINED ERROR, CHECK NODECONF.H FIRST!*////
     bxCan_begin(&hcan1, &mainCanRxQHandle, &mainCanTxQHandle);
@@ -517,29 +514,6 @@ static void MX_CAN1_Init(void)
 
 }
 
-/* CAN2 init function */
-static void MX_CAN2_Init(void)
-{
-
-  hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 16;
-  hcan2.Init.Mode = CAN_MODE_SILENT_LOOPBACK;
-  hcan2.Init.SJW = CAN_SJW_1TQ;
-  hcan2.Init.BS1 = CAN_BS1_1TQ;
-  hcan2.Init.BS2 = CAN_BS2_1TQ;
-  hcan2.Init.TTCM = DISABLE;
-  hcan2.Init.ABOM = DISABLE;
-  hcan2.Init.AWUM = DISABLE;
-  hcan2.Init.NART = DISABLE;
-  hcan2.Init.RFLM = DISABLE;
-  hcan2.Init.TXFP = DISABLE;
-  if (HAL_CAN_Init(&hcan2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-}
-
 /* SPI2 init function */
 static void MX_SPI2_Init(void)
 {
@@ -661,6 +635,8 @@ static void MX_DMA_Init(void)
         * Output
         * EVENT_OUT
         * EXTI
+     PB5   ------> CAN2_RX
+     PB6   ------> CAN2_TX
 */
 static void MX_GPIO_Init(void)
 {
@@ -742,6 +718,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(LTC_CS_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PB5 PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pin : BSD_Pin */
   GPIO_InitStruct.Pin = BSD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -777,7 +761,7 @@ void doApplication(void const * argument)
 //	  while(Serial2_available()){
 //		  Serial2_write(Serial2_read());
 //	  }
-	  osDelay(1000);
+	  osDelay(10000);
   }
   /* USER CODE END 5 */ 
 }
@@ -813,8 +797,9 @@ void doRT(void const * argument)
 #else
 	osDelay(10);
 #endif
-
+#ifndef DISABLE_SERIAL_OUT
 	static uint8_t intBuf[10];
+#endif
 	static uint32_t previousWaitTime;
 //	osDelay(50);
 
@@ -839,12 +824,16 @@ void doRT(void const * argument)
 			}
 			bxCan_sendFrame(&newFrame);
 #endif
+#ifndef DISABLE_SERIAL_OUT
 			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i], intBuf));
 			Serial2_write(',');
 			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i+1], intBuf));
 			Serial2_write(',');
+#endif
 		}
+#ifndef DISABLE_SERIAL_OUT
 		Serial2_write('\n');
+#endif
 		// XXX: Energy metering algorithm
 		mcp3909_sleep(&hmcp1);
 		HAL_WWDG_Refresh(&hwwdg);
@@ -885,9 +874,9 @@ void doSMT(void const * argument)
 #ifndef DISABLE_CAN
 	  if((selfStatusWord & 0x07) == ACTIVE){
 #endif
-		  int8_t success = ltc68041_clearCell(&hbms1);
+		  ltc68041_clearCell(&hbms1);
 		  osDelay(3);
-		  success = ltc68041_startCVConv(&hbms1);
+		  ltc68041_startCVConv(&hbms1);
 
 		  // Delay enough time but also make sure that the chip doesn't go into sleep mode
 		for(uint8_t i = 0; i < 3 * TOTAL_IC; i++){
@@ -896,19 +885,19 @@ void doSMT(void const * argument)
 		}
 
 		// Read the register groups
-		success = ltc68041_readRegGroup(&hbms1, RDCVA);
+		ltc68041_readRegGroup(&hbms1, RDCVA);
 		osDelay(2);
 		ltc68041_parseCV(&hbms1, A);
 
-		success = ltc68041_readRegGroup(&hbms1, RDCVB);
+		ltc68041_readRegGroup(&hbms1, RDCVB);
 		osDelay(2);
 		ltc68041_parseCV(&hbms1, B);
 
-		success = ltc68041_readRegGroup(&hbms1, RDCVC);
+		ltc68041_readRegGroup(&hbms1, RDCVC);
 		osDelay(2);
 		ltc68041_parseCV(&hbms1, C);
 
-		success = ltc68041_readRegGroup(&hbms1, RDCVD);
+		ltc68041_readRegGroup(&hbms1, RDCVD);
 		osDelay(2);
 		ltc68041_parseCV(&hbms1, D);
 
@@ -917,8 +906,6 @@ void doSMT(void const * argument)
 //		ltc68041_parseSTAT(&hbms1, B);
 
 #define vovTo100uV(x) ((x+1)*16)
-
-		static uint8_t ohno[] = "oh no!\n";
 
 		for(uint8_t i=0; i<3; i++){
 			for(uint8_t j=0; j<12; j+=4){
@@ -932,22 +919,26 @@ void doSMT(void const * argument)
 				newFrame.Data[5] = hbms1.board[i].CVR[j+2] & 0xff;
 				newFrame.Data[6] = hbms1.board[i].CVR[j+3] >> 8;
 				newFrame.Data[7] = hbms1.board[i].CVR[j+3] & 0xff;
-				if(bxCan_sendFrame(&newFrame) != 0){
-					Serial2_writeBuf(ohno);
-				}
+				bxCan_sendFrame(&newFrame);
+//				if(bxCan_sendFrame(&newFrame) != 0){
+//					Serial2_writeBuf("oh no!\n);
+//				}
 #endif
+#ifndef DISABLE_SERIAL_OUT
 				static uint8_t msg[3];
 				msg[0] = hbms1.board[i].CVR[j+0] >> 8;
 				msg[1] = hbms1.board[i].CVR[j+0] & 0xff;
 				Serial2_writeBuf(msg);
+#endif
 				for(uint8_t k=0; k<4; k++){
 					if(hbms1.board[i].CVR[j+k] > vovTo100uV(VOV) || hbms1.board[i].CVR[j+k] < vovTo100uV(VUV)){
+#ifndef DISABLE_SERIAL_OUT
 						Serial2_writeBuf(ohno);
+#endif
 						assert_bps_fault(i*3+j/4, hbms1.board[i].CVR[j+k]);
 					}
 				}
 			}
-			osDelay(1);
 		}
 
 		//Check OV UV flags
@@ -986,8 +977,9 @@ void doTMT(void const * argument)
 #else
 	osDelay(10);
 #endif
-
+#ifndef DISABLE_SERIAL_OUT
 	static uint8_t intBuf[10];
+#endif
 
   /* Infinite loop */
   for(;;)
@@ -1001,8 +993,10 @@ void doTMT(void const * argument)
 				  data = getReading(4*i+j);
 				  if(data >= OVER_TEMPERATURE || data <= UNDER_TEMPERATURE)
 					  assert_bps_fault(tempOffset+i*4+j, data);
+#ifndef DISABLE_SERIAL_OUT
 				  Serial2_writeBytes(intBuf, intToDec(data, intBuf));
 				  Serial2_write(',');
+#endif
 #ifndef DISABLE_CAN
 				  newFrame.Data[2*j] = data>>8;
 				  newFrame.Data[2*j+1] = data&0xff;
@@ -1013,7 +1007,9 @@ void doTMT(void const * argument)
 			  bxCan_sendFrame(&newFrame);
 #endif
 		  }
+#ifndef DISABLE_SERIAL_OUT
 		  Serial2_write('\n');
+#endif
 		  osDelay(TMT_Interval);
 #ifndef DISABLE_CAN
 	  }else{
