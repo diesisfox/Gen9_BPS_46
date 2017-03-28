@@ -47,5 +47,10 @@
 
 #define FToffset		0x0d0
 
+static const uint32_t firmwareString = 0x00000001;			// Firmware Version string
+static const uint8_t selfNodeID = bps_nodeID;					// The nodeID of this node
+uint32_t selfStatusWord;	// Initialize
+#define NODE_CONFIGURED
+
 
 #endif /* NODECONF_H_ */

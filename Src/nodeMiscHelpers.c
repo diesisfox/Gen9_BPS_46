@@ -5,6 +5,7 @@
  *      Author: frank
  */
 #include "nodeMiscHelpers.h"
+#include "nodeConf.h"
 
 extern uint32_t 	selfStatusWord;
 extern osMutexId 	swMtxHandle;
@@ -33,7 +34,7 @@ void executeCommand(uint8_t cmd){
 	case NODE_SHUTDOWN:
 		if((selfState == ACTIVE) || (selfState == INIT)){
 			node_shutdown();						// Soft shutdown if node is active
-			xTimerStop(HBTmrHandle, portMAX_DELAY);	// Stop the heartbeat timer
+			xTimerStop(HBTmrHandle, 0);	// Stop the heartbeat timer
 
 			// XXX 4: User must suspend any additional application tasks
 			// xTaskSuspend(ApplicationHandle);		// Suspend any active non-CAN tasks
@@ -46,7 +47,6 @@ void executeCommand(uint8_t cmd){
 			setState(INIT);
 			// Flush the Rx queue for fresh state on start-up
 			xQueueReset(mainCanRxQHandle);
-			xQueueReset(mainCanTxQHandle);
 			// XXX 2: Flush the application queues!
 			// xQueueReset();
 
@@ -61,6 +61,13 @@ void executeCommand(uint8_t cmd){
 	case CC_ACK:
 		if(selfState == INIT){
 			setState(ACTIVE);
+			static Can_frame_t newFrame;
+			newFrame.id = selfNodeID + swOffset;
+			newFrame.dlc = CAN_HB_DLC;
+			for(int i=0; i<4; i++){
+				newFrame.Data[3-i] = (selfStatusWord >> (8*i)) & 0xff;			// Convert uint32_t -> uint8_t
+			}
+			bxCan_sendFrame(&newFrame);
 		}
 		break;
 
@@ -107,11 +114,12 @@ inline void soft_shutdown(void(*usr_clbk)()){
 	setState(SHUTDOWN);
 
 	// User defined shutdown routine
-	usr_clbk();
+//	usr_clbk();
 
 	// Broadcast node shutdown state to main CAN
 	Can_frame_t newFrame;
 	newFrame.id = radio_SW;
+	newFrame.isExt = 0;
 	newFrame.dlc = CAN_HB_DLC;
 	for(int i=0; i<4; i++){
 		newFrame.Data[3-i] = (selfStatusWord >> (8*i)) & 0xff;			// Convert uint32_t -> uint8_t

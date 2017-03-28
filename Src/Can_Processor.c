@@ -5,6 +5,7 @@
  *      Author: frank
  */
 #include "Can_Processor.h"
+#include "nodeConf.h"
 
 extern osMessageQId mainCanRxQHandle;
 extern const uint8_t selfNodeID;

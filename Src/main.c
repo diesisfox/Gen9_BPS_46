@@ -108,14 +108,14 @@ uint8_t mcpTxBuf[REG_LEN * REGS_NUM + CTRL_LEN];
 uint8_t init_Done = 0;
 
 // SW_Sentinel will fail the CC firmware check and result in node addition failure!
-const uint32_t firmwareString = 0x00000001;			// Firmware Version string
-const uint8_t selfNodeID = bps_nodeID;					// The nodeID of this node
-uint32_t selfStatusWord = INIT;							// Initialize
-#define NODE_CONFIGURED
-
-#ifndef NODE_CONFIGURED
-#error "NODE NOT CONFIGURED. GO CONFIGURE IT IN NODECONF.H!"
-#endif
+//const uint32_t firmwareString = 0x00000001;			// Firmware Version string
+//const uint8_t selfNodeID = bps_nodeID;					// The nodeID of this node
+//uint32_t selfStatusWord = INIT;							// Initialize
+//#define NODE_CONFIGURED
+//
+//#ifndef NODE_CONFIGURED
+//#error "NODE NOT CONFIGURED. GO CONFIGURE IT IN NODECONF.H!"
+//#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -217,7 +217,7 @@ int main(void)
 //#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
-
+	selfStatusWord = INIT;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -251,8 +251,9 @@ int main(void)
     ////*IF YOU GET HCAN1 NOT DEFINED ERROR, CHECK NODECONF.H FIRST!*////
     bxCan_begin(&hcan1, &mainCanRxQHandle, &mainCanTxQHandle);
     // TODO: Set node-specific CAN filters
-    bxCan_addMaskedFilterStd(0,0,0); // Filter: Status word group (ignore nodeID)
-    bxCan_addMaskedFilterExt(0,0,0);
+//    bxCan_addMaskedFilterStd(0,0,0); // Filter: Status word group (ignore nodeID)
+//    bxCan_addMaskedFilterExt(0,0,0);
+    bxCan_addMaskedFilterStd(p2pOffset,0xFF0,0);
 
 #ifndef DISABLE_TMT
     Temp_begin(&hadc1);
@@ -498,9 +499,9 @@ static void MX_CAN1_Init(void)
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 5;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SJW = CAN_SJW_3TQ;
-  hcan1.Init.BS1 = CAN_BS1_12TQ;
-  hcan1.Init.BS2 = CAN_BS2_3TQ;
+  hcan1.Init.SJW = CAN_SJW_1TQ;
+  hcan1.Init.BS1 = CAN_BS1_13TQ;
+  hcan1.Init.BS2 = CAN_BS2_2TQ;
   hcan1.Init.TTCM = DISABLE;
   hcan1.Init.ABOM = ENABLE;
   hcan1.Init.AWUM = ENABLE;
@@ -1043,14 +1044,19 @@ void TmrSendHB(void const * argument)
   /* USER CODE BEGIN TmrSendHB */
 	// CHECKED
 	static Can_frame_t newFrame;
-	newFrame.isExt = 0;
-	newFrame.isRemote = 0;
+
+//	newFrame.isExt = 0;
+//	newFrame.isRemote = 0;
+	// ^ is initialized as 0
 
 	if(getSelfState() == ACTIVE){
 		// Assemble new heartbeat frame
 		newFrame.id = selfNodeID + swOffset;
 		newFrame.dlc = CAN_HB_DLC;
-
+		for(int i=0; i<4; i++){
+			newFrame.Data[3-i] = (selfStatusWord >> (8*i)) & 0xff;			// Convert uint32_t -> uint8_t
+		}
+		bxCan_sendFrame(&newFrame);
 		#ifdef DEBUG
 			static uint8_t hbmsg[] = "Heartbeat issued\n";
 			Serial2_writeBytes(hbmsg, sizeof(hbmsg)-1);
@@ -1060,13 +1066,15 @@ void TmrSendHB(void const * argument)
 		// Assemble new addition request (firmware version) frame
 		newFrame.id = selfNodeID + fwOffset;
 		newFrame.dlc = CAN_FW_DLC;
-
+		for(int i=0; i<4; i++){
+			newFrame.Data[3-i] = (firmwareString >> (8*i)) & 0xff;			// Convert uint32_t -> uint8_t
+		}
+		bxCan_sendFrame(&newFrame);
 		#ifdef DEBUG
 			static uint8_t hbmsg[] = "Init handshake issued\n";
 			Serial2_writeBytes(hbmsg, sizeof(hbmsg)-1);
 		#endif
 	}
-	bxCan_sendFrame(&newFrame);
 	// No heartbeats sent in other states
   /* USER CODE END TmrSendHB */
 }
