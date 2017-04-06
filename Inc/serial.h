@@ -13,7 +13,7 @@
 #include "stm32f4xx_hal.h"
 
 #ifndef SERIAL2_BUFFER_SIZE
-#define SERIAL2_BUFFER_SIZE 64
+#define SERIAL2_BUFFER_SIZE_RX 64
 #endif
 
 #ifndef SERIAL2_BUFFER_SIZE_TX
@@ -28,7 +28,7 @@
 
 uint8_t Serial2_writeStr_Buf[SERIAL2_BUFFER_SIZE_TX];
 
-uint8_t Serial2_buffer[SERIAL2_BUFFER_SIZE];
+uint8_t Serial2_buffer[SERIAL2_BUFFER_SIZE_RX];
 
 void Serial2_begin();
 int Serial2_available();

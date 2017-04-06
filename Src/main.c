@@ -217,7 +217,7 @@ int main(void)
 //#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
-	selfStatusWord = INIT;
+	selfStatusWord = ACTIVE;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -824,6 +824,7 @@ void doRT(void const * argument)
 				newFrame.Data[2*j+1] = hmcp1.registers[2*i+1] >> (24-8*j);
 			}
 			bxCan_sendFrame(&newFrame);
+			// there is no limit checking/bps kill for RT task.
 #endif
 #ifndef DISABLE_SERIAL_OUT
 			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i], intBuf));

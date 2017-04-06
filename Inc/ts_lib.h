@@ -12,8 +12,8 @@
 //MAX_CHANNEL specifies the number of channels of the mux in use
 #define TEMP_CHANNELS 16
 #define TEMP_MUXES ((TEMP_CHANNELS-1)/16+1)
-#define OVER_TEMPERATURE 4096
-#define UNDER_TEMPERATURE 0
+#define OVER_TEMPERATURE 0xffff
+#define UNDER_TEMPERATURE 0x0000
 #define TEMP_OVERSAMPLING 16
 
 void Temp_begin(ADC_HandleTypeDef* hadc_in);

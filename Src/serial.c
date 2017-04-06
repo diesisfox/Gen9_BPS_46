@@ -11,11 +11,11 @@ extern UART_HandleTypeDef huart2;
 extern DMA_HandleTypeDef hdma_usart2_rx;
 
 static uint8_t *Serial2_tail = Serial2_buffer;
-static uint8_t *Serial2_max = Serial2_buffer + SERIAL2_BUFFER_SIZE; //points just outside the bounds
+static uint8_t *Serial2_max = Serial2_buffer + SERIAL2_BUFFER_SIZE_RX; //points just outside the bounds
 static uint8_t Serial2_Ovf = 0;
 
 void Serial2_begin(){
-	HAL_UART_Receive_DMA(&huart2, Serial2_buffer, SERIAL2_BUFFER_SIZE);
+	HAL_UART_Receive_DMA(&huart2, Serial2_buffer, SERIAL2_BUFFER_SIZE_RX);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
@@ -23,7 +23,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static uint8_t *Serial2_getHead(){ //Volatile! Avoid use as much as possible!
-	return Serial2_buffer + SERIAL2_BUFFER_SIZE - (hdma_usart2_rx.Instance->NDTR & 0xffff);
+	return Serial2_buffer + SERIAL2_BUFFER_SIZE_RX - (hdma_usart2_rx.Instance->NDTR & 0xffff);
 //	return hdma_usart2_rx.Instance->M0AR;
 }
 
@@ -32,11 +32,11 @@ int Serial2_available(){
 	if(Serial2_Ovf==0){
 		return head - Serial2_tail;
 	}else if((Serial2_Ovf==1) && (head <= Serial2_tail)){
-		return SERIAL2_BUFFER_SIZE - (Serial2_tail - head);
+		return SERIAL2_BUFFER_SIZE_RX - (Serial2_tail - head);
 	}else{
 		Serial2_tail = head;
 		Serial2_Ovf = 1;
-		return SERIAL2_BUFFER_SIZE;
+		return SERIAL2_BUFFER_SIZE_RX;
 	}
 }
 
@@ -84,7 +84,7 @@ int Serial2_find(uint8_t data){
 	//different from Arduino: this returns index of char of interest!
 	for(int i=0; i<Serial2_available(); i++){
 		if(*((Serial2_tail+i >= Serial2_max)?
-				Serial2_tail+i-SERIAL2_BUFFER_SIZE:
+				Serial2_tail+i-SERIAL2_BUFFER_SIZE_RX:
 				Serial2_tail+i) ==data) return i;
 	}
 	return -1;
@@ -93,7 +93,7 @@ int Serial2_find(uint8_t data){
 int Serial2_findAny(uint8_t *match, int length){
 	for(int i=0; i<Serial2_available(); i++){
 		uint8_t input = *((Serial2_tail+i >= Serial2_max)?
-				Serial2_tail+i-SERIAL2_BUFFER_SIZE:
+				Serial2_tail+i-SERIAL2_BUFFER_SIZE_RX:
 				Serial2_tail+i);
 		for(int j=0; j<length; j++){
 			if(input == *(match+j)) return i;
