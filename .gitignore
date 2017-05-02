@@ -16,6 +16,10 @@ Src/Backup
 **/settings/*.wsdt
 **/settings/*.wspos
 
+# IAR Trash
+EWARM/*.dep
+**/settings/*.dnx
+
 # IAR Debug Exe  
 EWARM/*/Exe/*.sim
 
