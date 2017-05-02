@@ -7,7 +7,7 @@
 #include "nodeMiscHelpers.h"
 #include "nodeConf.h"
 
-extern uint32_t 	selfStatusWord;
+uint32_t 	selfStatusWord;
 extern osMutexId 	swMtxHandle;
 extern osMessageQId mainCanTxQHandle;
 extern osMessageQId mainCanRxQHandle;
@@ -87,7 +87,7 @@ void executeCommand(uint8_t cmd){
 /* CHECKED
  * Thread-safe node state accessor
  */
-nodeState inline getSelfState(){
+nodeState getSelfState(){
 	xSemaphoreTake(swMtxHandle, portMAX_DELAY);
 	nodeState ret = (nodeState)(selfStatusWord & 0x07);
 	xSemaphoreGive(swMtxHandle);
@@ -97,7 +97,7 @@ nodeState inline getSelfState(){
 /* CHECKED
  * Thread-safe node state mutator
  */
-inline void setSelfState(nodeState newState){
+void setSelfState(nodeState newState){
 	xSemaphoreTake(swMtxHandle, portMAX_DELAY);
 	selfStatusWord &= 0xfffffff8;	// Clear the current status word
 	selfStatusWord |= newState;
@@ -109,7 +109,7 @@ inline void setSelfState(nodeState newState){
  * Assembles node SHUTDOWN statusword CAN frame
  * Flushes CanTx queue via broadcast on bxCAN
  */
-inline void soft_shutdown(void(*usr_clbk)()){
+void soft_shutdown(void(*usr_clbk)()){
 	// Don't care about locking the statusWord here since we are in Critical Area
 	setState(SHUTDOWN);
 

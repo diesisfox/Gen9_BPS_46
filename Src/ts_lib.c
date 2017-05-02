@@ -11,10 +11,10 @@ static uint16_t dmaBuffer[8];
 static uint8_t convInProg = 0;
 
 static void switchChannel(uint8_t channel){
-	HAL_GPIO_WritePin(S0_GPIO_Port, S0_Pin, channel & 0b0001);
-	HAL_GPIO_WritePin(S1_GPIO_Port, S1_Pin, channel & 0b0010);
-	HAL_GPIO_WritePin(S2_GPIO_Port, S2_Pin, channel & 0b0100);
-	HAL_GPIO_WritePin(S3_GPIO_Port, S3_Pin, channel & 0b1000);
+	HAL_GPIO_WritePin(S0_GPIO_Port, S0_Pin, channel & 0x1);
+	HAL_GPIO_WritePin(S1_GPIO_Port, S1_Pin, channel & 0x2);
+	HAL_GPIO_WritePin(S2_GPIO_Port, S2_Pin, channel & 0x4);
+	HAL_GPIO_WritePin(S3_GPIO_Port, S3_Pin, channel & 0x8);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
@@ -34,7 +34,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	}
 	switchChannel(convInProg);
 	HAL_ADC_Stop_DMA(hadc);
-	HAL_ADC_Start_DMA(hadc, dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!
+	HAL_ADC_Start_DMA(hadc, (uint32_t*)dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!
 }
 
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc){
@@ -53,7 +53,7 @@ void Temp_begin(ADC_HandleTypeDef* hadc_in){
 	tempMtxHandle = osMutexCreate(osMutex(tempMtx));
 
 	switchChannel(convInProg);
-	HAL_ADC_Start_DMA(hadc, dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!
+	HAL_ADC_Start_DMA(hadc, (uint32_t*)dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!
 }
 
 uint16_t getReading(uint8_t channel){

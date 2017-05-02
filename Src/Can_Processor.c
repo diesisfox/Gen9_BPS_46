@@ -10,7 +10,7 @@
 extern osMessageQId mainCanRxQHandle;
 extern const uint8_t selfNodeID;
 
-inline void Can_Processor(){
+void Can_Processor(){
 static Can_frame_t newFrame;
 		xQueueReceive(mainCanRxQHandle, &newFrame, portMAX_DELAY);
 		uint32_t canID = newFrame.id;	// canID container
