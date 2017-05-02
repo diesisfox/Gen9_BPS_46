@@ -8,7 +8,10 @@
 #include "serial.h"
 
 extern UART_HandleTypeDef huart2;
-extern DMA_HandleTypeDef hdma_usart2_rx;
+
+uint8_t Serial2_writeStr_Buf[SERIAL2_BUFFER_SIZE_TX];
+
+uint8_t Serial2_buffer[SERIAL2_BUFFER_SIZE_RX];
 
 static uint8_t *Serial2_tail = Serial2_buffer;
 static uint8_t *Serial2_max = Serial2_buffer + SERIAL2_BUFFER_SIZE_RX; //points just outside the bounds
@@ -23,8 +26,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static uint8_t *Serial2_getHead(){ //Volatile! Avoid use as much as possible!
-	return Serial2_buffer + SERIAL2_BUFFER_SIZE_RX - (hdma_usart2_rx.Instance->NDTR & 0xffff);
-//	return hdma_usart2_rx.Instance->M0AR;
+//	return Serial2_buffer + SERIAL2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1,LL_DMA_CHANNEL_6);
+	return Serial2_buffer + SERIAL2_BUFFER_SIZE_RX - (huart2.hdmarx->Instance->NDTR & 0xffff);
 }
 
 int Serial2_available(){

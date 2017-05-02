@@ -70,7 +70,7 @@ uint8_t mcp3909_SPI_ReadReg(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_
 
 	if(hmcp->readType != readType){
 		hmcp->readType = readType;	// Update Handle status
-		MODIFY_REG(hmcp->registers[STATUS], (0b11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
+		MODIFY_REG(hmcp->registers[STATUS], (0B11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
 
 		// Assemble CONTROL BYTE to write STATUS register
 		// | 0 | 1 | STATUS | W |
@@ -149,7 +149,7 @@ uint8_t mcp3909_SPI_ReadRegSync(MCP3909HandleTypeDef * hmcp, uint8_t address, ui
 
 	if(hmcp->readType != readType){
 		hmcp->readType = readType;	// Update Handle status
-		MODIFY_REG(hmcp->registers[STATUS], (0b11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
+		MODIFY_REG(hmcp->registers[STATUS], (0B11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
 
 		// Assemble CONTROL BYTE to write STATUS register
 		// | 0 | 1 | STATUS | W |

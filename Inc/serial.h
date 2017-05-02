@@ -12,12 +12,12 @@
 #include <String.h>
 #include "stm32f4xx_hal.h"
 
-#ifndef SERIAL2_BUFFER_SIZE
-#define SERIAL2_BUFFER_SIZE_RX 64
+#ifndef SERIAL2_BUFFER_SIZE_RX
+#define SERIAL2_BUFFER_SIZE_RX 512
 #endif
 
 #ifndef SERIAL2_BUFFER_SIZE_TX
-#define SERIAL2_BUFFER_SIZE_TX 128
+#define SERIAL2_BUFFER_SIZE_TX 4096
 #endif
 
 //this is for writing an existing, assigned buffer:
@@ -26,9 +26,9 @@
 //this is for writing a string literal:
 //#define Serial2_writeStr(str) Serial2_writeStr_Buf=(str); Serial2_writeBytes(Serial2_writeStr_Buf, sizeof((str))-1)
 
-uint8_t Serial2_writeStr_Buf[SERIAL2_BUFFER_SIZE_TX];
+extern uint8_t Serial2_writeStr_Buf[SERIAL2_BUFFER_SIZE_TX];
 
-uint8_t Serial2_buffer[SERIAL2_BUFFER_SIZE_RX];
+extern uint8_t Serial2_buffer[SERIAL2_BUFFER_SIZE_RX];
 
 void Serial2_begin();
 int Serial2_available();
