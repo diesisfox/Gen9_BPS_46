@@ -70,8 +70,9 @@ uint8_t mcp3909_SPI_ReadReg(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_
 
 	if(hmcp->readType != readType){
 		hmcp->readType = readType;	// Update Handle status
-		MODIFY_REG(hmcp->registers[STATUS], (0b11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
-
+		MODIFY_REG(hmcp->registers[STATUS], (0x03) << READ_MODE_OFFSET, readType << READ_MODE_OFFSET);	// Update register data
+        
+        
 		// Assemble CONTROL BYTE to write STATUS register
 		// | 0 | 1 | STATUS | W |
 		// 0 1 0 1 0 0 1 0
@@ -149,7 +150,7 @@ uint8_t mcp3909_SPI_ReadRegSync(MCP3909HandleTypeDef * hmcp, uint8_t address, ui
 
 	if(hmcp->readType != readType){
 		hmcp->readType = readType;	// Update Handle status
-		MODIFY_REG(hmcp->registers[STATUS], (0b11 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
+		MODIFY_REG(hmcp->registers[STATUS], (0x03 << READ_MODE_OFFSET), readType << READ_MODE_OFFSET);	// Update register data
 
 		// Assemble CONTROL BYTE to write STATUS register
 		// | 0 | 1 | STATUS | W |
@@ -193,7 +194,7 @@ uint8_t mcp3909_SPI_ReadRegSync(MCP3909HandleTypeDef * hmcp, uint8_t address, ui
 	}
 }
 
-inline uint8_t mcp3909_SPI_ReadGroup(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
+uint8_t mcp3909_SPI_ReadGroup(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
 	if(address == MOD){
 		return mcp3909_SPI_ReadReg(hmcp, address, buffer, MOD_GROUP_LEN + CTRL_LEN, READ_GROUP);
 	}
@@ -203,12 +204,12 @@ inline uint8_t mcp3909_SPI_ReadGroup(MCP3909HandleTypeDef * hmcp, uint8_t addres
 
 }
 
-inline uint8_t mcp3909_SPI_ReadType(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
+uint8_t mcp3909_SPI_ReadType(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
 
 	return mcp3909_SPI_ReadReg(hmcp, address, buffer, CTRL_LEN + MAX_CHANNEL_NUM * REG_LEN,READ_TYPE);
 }
 
-inline uint8_t mcp3909_SPI_ReadAll(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
+uint8_t mcp3909_SPI_ReadAll(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_t * buffer){
 	return mcp3909_SPI_ReadReg(hmcp, address, buffer, READ_ALL, REGS_NUM * REG_LEN);
 }
 
@@ -350,11 +351,11 @@ uint8_t mcp3909_wakeup(MCP3909HandleTypeDef * hmcp){
 }
 
 // Obtain channel info
-inline uint8_t  mcp3909_readAllChannels(MCP3909HandleTypeDef * hmcp, uint8_t * buffer){
+uint8_t  mcp3909_readAllChannels(MCP3909HandleTypeDef * hmcp, uint8_t * buffer){
 	return mcp3909_SPI_ReadType(hmcp, CHANNEL_0, buffer);
 }
 
-inline uint8_t mcp3909_readChannel(MCP3909HandleTypeDef * hmcp, uint8_t channelNum, uint8_t * buffer){
+uint8_t mcp3909_readChannel(MCP3909HandleTypeDef * hmcp, uint8_t channelNum, uint8_t * buffer){
 #ifdef DEBUG
 	assert_param(channelNum < MAX_CHANNEL_NUM);
 #endif
@@ -365,13 +366,13 @@ uint32_t bytesToReg(uint8_t * byte){
 	return ((byte[2] | (byte[1] << 8) | (byte[0] << 16)) & 0xFFFFFF);
 }
 
-inline void regToBytes(uint32_t * reg, uint8_t * bytes){
+void regToBytes(uint32_t * reg, uint8_t * bytes){
 	bytes[2] = (*reg) & 0xFF;
 	bytes[1] = ((*reg) >> 8)  & 0xFF;
 	bytes[0] = ((*reg) >> 16) & 0xFF;
 }
 
-inline void mcp3909_parseChannelData(MCP3909HandleTypeDef * hmcp){
+void mcp3909_parseChannelData(MCP3909HandleTypeDef * hmcp){
 	for(uint8_t i = 0; i < MAX_CHANNEL_NUM; i++){
 		hmcp->registers[i] = bytesToReg((hmcp->pRxBuf)+REG_LEN*i+CTRL_LEN);
 	}

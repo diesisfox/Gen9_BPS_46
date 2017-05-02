@@ -28,12 +28,11 @@
 #endif
 
 #define _delayUS_ASM(X) \
-	asm volatile (	"MOV R0,#" #X  "\n\t"\
-			"1: \n\t"\
-			"SUB R0, #1\n\t"\
-			"CMP R0, #0\n\t"\
-			"BNE 1b \n\t"\
-		      );\
+	asm volatile (	"mov r0,#" #X  "\n"\
+			"loop: \n" \
+              "sub r0,r0, #1 \n" \
+              "cmp r0, #0 \n" \
+			"bne loop \n" );
 
 #define node_shutdown()		soft_shutdown(NULL)			// shutdown wrapper
 

@@ -605,35 +605,35 @@ int8_t ltc68041_accuracyTest(bmsChainHandleTypeDef * hbms){
 
 // TESTED
 // Clear register operations
-inline int8_t ltc68041_clearCell(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_clearCell(bmsChainHandleTypeDef * hbms){
 	return ltc68041_writeCommand(hbms, CLRCELL);
 }
 
 // TODO: TEST
-inline int8_t ltc68041_clearAux(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_clearAux(bmsChainHandleTypeDef * hbms){
 	return ltc68041_writeCommand(hbms, CLRAUX);
 }
 
 // TODO: TEST
-inline int8_t ltc68041_clearStat(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_clearStat(bmsChainHandleTypeDef * hbms){
 	return ltc68041_writeCommand(hbms, CLRSTAT);
 }
 
 // TESTED
 // Start conversion
-inline int8_t ltc68041_startCVConv(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_startCVConv(bmsChainHandleTypeDef * hbms){
 	// Disable cell discharge
 	// Read all cell channels
 	return ltc68041_writeCommand(hbms, ADCV_T | (MD_BITS) | (DCP_OFF << DCP_OFFSET));
 }
 
 // TODO: TEST
-inline int8_t ltc68041_startAUXConv(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_startAUXConv(bmsChainHandleTypeDef * hbms){
 	return ltc68041_writeCommand(hbms, ADAX_T | (MD_BITS));
 }
 
 // TODO: TEST
-inline int8_t ltc68041_startCVAUXConv(bmsChainHandleTypeDef * hbms){
+int8_t ltc68041_startCVAUXConv(bmsChainHandleTypeDef * hbms){
 	return ltc68041_writeCommand(hbms, ADCVAX_T | (MD_BITS) | (DCP_OFF << DCP_OFFSET));
 }
 

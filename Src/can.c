@@ -79,7 +79,7 @@ static void empty(){}		// Empty function
 void bxCan_begin(CAN_HandleTypeDef *hcan, osMessageQId *rx, osMessageQId *tx){
 	bxCan_Txcb = empty;
 	bxCan_Rxcb = empty;
-	bxCan_Ercb = empty;
+	bxCan_Ercb = NULL;
 	hcan_handle = hcan;
 	rxQ = rx;
 	txQ = tx;
@@ -342,7 +342,7 @@ int bxCan_getFilterNum(uint32_t fmi){
  * Check if bxCAN is ready for transmission
  */
 int Can_availableForTx(){
-	if((hcan_handle->State == HAL_CAN_STATE_READY) || (hcan_handle->State == HAL_CAN_STATE_BUSY_RX)){
+	if((hcan_handle->State == HAL_CAN_STATE_READY) || (hcan_handle->State == HAL_CAN_STATE_BUSY_RX0)){
 		return 1;
 	}
 	return 0;
@@ -409,8 +409,6 @@ int bxCan_sendFrame(Can_frame_t *frame){
 	if(fail == pdPASS){
 		// Only try to transmit if message successfully placed onto Tx Q
 		fail = bxCanDoTx(0);		// Call bxCAN Tx function from non-ISR context
-	}else{
-		fail = 1;
 	}
 	return fail;
 }
