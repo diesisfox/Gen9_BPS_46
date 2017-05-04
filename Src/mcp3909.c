@@ -10,6 +10,9 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal_spi.h"
 
+#define REG_LEN           (3U)
+#define SPI_TIMEOUT		1000
+
 // User library functions
 // SPI Utility functions
 

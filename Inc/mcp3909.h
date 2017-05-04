@@ -13,7 +13,7 @@
 // NOTE: the Tx Buffer should always have the first byte empty for the CONTROL BYTE!
 // Tx and Rx buffers must both be declared and allocated globally before the functions
 
-#define SPI_TIMEOUT		1000 	// SPI Synchronous blocking timeout - milliseconds
+//#define SPI_TIMEOUT		1000 	// SPI Synchronous blocking timeout - milliseconds
 #define T_POR			50		// Power on reset wait time
 
 // Register Addresses
@@ -34,7 +34,7 @@
 #define MAX_CHANNEL_NUM   (6U)
 #define MAX_CHN_SET_NUM   (3U)
 #define REGS_NUM		  (11U)
-#define REG_LEN           (3U)
+//#define REG_LEN           (3U)
 #define CTRL_LEN		  (1U)
 #define CHN_GROUP_LEN     (2U) * REG_LEN
 #define MOD_GROUP_LEN     (3U) * REG_LEN
