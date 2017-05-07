@@ -2,7 +2,7 @@
 
 static ADC_HandleTypeDef* hadc;
 
-static osMutexId tempMtxHandle;
+static SemaphoreHandle_t tempMtxHandle;
 
 static uint32_t aggregate[TEMP_CHANNELS];
 static uint32_t sampleCount[TEMP_CHANNELS];
@@ -49,8 +49,7 @@ void Temp_begin(ADC_HandleTypeDef* hadc_in){
 
 	hadc = hadc_in;
 
-	osMutexDef(tempMtx);
-	tempMtxHandle = osMutexCreate(osMutex(tempMtx));
+	tempMtxHandle = xSemaphoreCreateMutex();
 
 	switchChannel(convInProg);
 	HAL_ADC_Start_DMA(hadc, (uint32_t*)dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!

@@ -456,7 +456,12 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan){
  * Passes the CAN Error code as argument
  */
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan){
-	bxCan_Ercb(HAL_CAN_GetError(hcan));
+    if(bxCan_Ercb){
+        bxCan_Ercb(HAL_CAN_GetError(hcan));
+    }
+    if(hcan->State == HAL_CAN_STATE_READY || hcan->State == HAL_CAN_STATE_BUSY_TX){
+        HAL_CAN_Receive_IT(hcan, 0);
+    }
 }
 
 void bxCan_setTxCallback(void(*pt)()){
