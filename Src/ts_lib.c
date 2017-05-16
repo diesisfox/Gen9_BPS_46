@@ -1,4 +1,5 @@
 #include "ts_lib.h"
+#include "thermistor.h"
 
 static ADC_HandleTypeDef* hadc;
 
@@ -71,6 +72,22 @@ uint16_t getReading(uint8_t channel){
 			return (n-(s*(c%TEMP_OVERSAMPLING)))/(c/TEMP_OVERSAMPLING);
 			//^(the sum minus last incomplete 16) divided by oversample chunks
 		}
+	}else{
+		return 0;
+	}
+}
+
+int32_t getMilliCelcius(uint8_t channel){
+	static uint32_t n, c, s;
+	if(channel < TEMP_CHANNELS && sampleCount[channel]/TEMP_OVERSAMPLING){
+		xSemaphoreTake(tempMtxHandle, portMAX_DELAY);
+		n = aggregate[channel];		//aggregated sum of samples
+		c = sampleCount[channel];	//total number of samples aggreagated
+		s = dmaBuffer[channel];		//latest one sample
+		aggregate[channel] = 0;
+		sampleCount[channel] = 0;
+		xSemaphoreGive(tempMtxHandle);
+		return adc_to_milliCelcius(n,c);
 	}else{
 		return 0;
 	}
