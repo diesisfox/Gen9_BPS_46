@@ -1201,6 +1201,9 @@
                 <name>$PROJ_DIR$\..\Src\stm32f4xx_it.c</name>
             </file>
             <file>
+                <name>$PROJ_DIR$\..\Src\thermistor.c</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\Src\ts_lib.c</name>
             </file>
         </group>

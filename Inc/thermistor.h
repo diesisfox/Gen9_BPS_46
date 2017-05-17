@@ -22,5 +22,6 @@ uint64_t adc_to_nanovolts(uint32_t s, uint32_t n);
 uint32_t nanovolts_to_milliohms(uint64_t v);
 uint8_t binarySearchUnder(uint32_t mohms, uint8_t low, uint8_t high);
 int32_t adc_to_milliCelcius(uint32_t s, uint32_t n);
+int32_t adc_to_microCelcius(uint32_t s, uint32_t n);
 
 #endif /* THERMISTOR_H_ */

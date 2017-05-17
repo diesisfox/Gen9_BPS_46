@@ -59,13 +59,9 @@ void Temp_begin(ADC_HandleTypeDef* hadc_in){
 uint16_t getReading(uint8_t channel){
 	static uint32_t n, c, s;
 	if(channel < TEMP_CHANNELS && sampleCount[channel]/TEMP_OVERSAMPLING){
-		xSemaphoreTake(tempMtxHandle, portMAX_DELAY);
 		n = aggregate[channel];		//aggregated sum of samples
 		c = sampleCount[channel];	//total number of samples aggreagated
 		s = dmaBuffer[channel];		//latest one sample
-		aggregate[channel] = 0;
-		sampleCount[channel] = 0;
-		xSemaphoreGive(tempMtxHandle);
 		if(TEMP_OVERSAMPLING == 1){
 			return n/c;
 		}else{
@@ -77,17 +73,30 @@ uint16_t getReading(uint8_t channel){
 	}
 }
 
+void resetReading((uint8_t channel){
+	xSemaphoreTake(tempMtxHandle, portMAX_DELAY);
+	aggregate[channel] = 0;
+	sampleCount[channel] = 0;
+	xSemaphoreGive(tempMtxHandle);
+}
+
 int32_t getMilliCelcius(uint8_t channel){
-	static uint32_t n, c, s;
+	static uint32_t n, c;
 	if(channel < TEMP_CHANNELS && sampleCount[channel]/TEMP_OVERSAMPLING){
-		xSemaphoreTake(tempMtxHandle, portMAX_DELAY);
 		n = aggregate[channel];		//aggregated sum of samples
 		c = sampleCount[channel];	//total number of samples aggreagated
-		s = dmaBuffer[channel];		//latest one sample
-		aggregate[channel] = 0;
-		sampleCount[channel] = 0;
-		xSemaphoreGive(tempMtxHandle);
 		return adc_to_milliCelcius(n,c);
+	}else{
+		return 0;
+	}
+}
+
+int32_t getMicroCelcius(uint8_t channel){
+	static uint32_t n, c;
+	if(channel < TEMP_CHANNELS && sampleCount[channel]/TEMP_OVERSAMPLING){
+		n = aggregate[channel];		//aggregated sum of samples
+		c = sampleCount[channel];	//total number of samples aggreagated
+		return adc_to_microCelcius(n,c);
 	}else{
 		return 0;
 	}

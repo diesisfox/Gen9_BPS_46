@@ -49,6 +49,7 @@
 #include "can.h"
 #include "serial.h"
 #include "ts_lib.h"
+#include "thermistor.h"
 #include "nodeMiscHelpers.h"
 #include "nodeConf.h"
 #include "../../CAN_ID.h"
@@ -212,8 +213,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//#define DISABLE_RT
-//#define DISABLE_SMT
+#define DISABLE_RT
+#define DISABLE_SMT
 //#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
@@ -979,9 +980,9 @@ void doTMT(void const * argument)
 #else
 	osDelay(10);
 #endif
-#ifndef DISABLE_SERIAL_OUT
+//#ifndef DISABLE_SERIAL_OUT
 	static uint8_t intBuf[10];
-#endif
+//#endif
 
   /* Infinite loop */
   for(;;)
@@ -990,15 +991,18 @@ void doTMT(void const * argument)
 	  if((selfStatusWord & 0x07) == ACTIVE){
 #endif
 		  uint16_t data;
+          int32_t temperature;
 		  for(int i=0; 4*i<TEMP_CHANNELS; i++){
 			  for(int j=0; j<4; j++){
+                  temperature = getMilliCelcius(4*i+j);
 				  data = getReading(4*i+j);
+                  
 				  if(data >= OVER_TEMPERATURE || data <= UNDER_TEMPERATURE)
 					  assert_bps_fault(tempOffset+i*4+j, data);
-#ifndef DISABLE_SERIAL_OUT
-				  Serial2_writeBytes(intBuf, intToDec(data, intBuf));
+//#ifndef DISABLE_SERIAL_OUT
+				  Serial2_writeBytes(intBuf, intToDec(temperature, intBuf));
 				  Serial2_write(',');
-#endif
+//#endif
 #ifndef DISABLE_CAN
 				  newFrame.Data[2*j] = data>>8;
 				  newFrame.Data[2*j+1] = data&0xff;
@@ -1009,9 +1013,9 @@ void doTMT(void const * argument)
 			  bxCan_sendFrame(&newFrame);
 #endif
 		  }
-#ifndef DISABLE_SERIAL_OUT
+//#ifndef DISABLE_SERIAL_OUT
 		  Serial2_write('\n');
-#endif
+//#endif
 		  osDelay(TMT_Interval);
 #ifndef DISABLE_CAN
 	  }else{
