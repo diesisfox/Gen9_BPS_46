@@ -213,9 +213,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-#define DISABLE_RT
-#define DISABLE_SMT
-//#define DISABLE_TMT
+//#define DISABLE_RT
+//#define DISABLE_SMT
+#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
 	selfStatusWord = INIT;

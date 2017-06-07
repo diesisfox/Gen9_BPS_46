@@ -73,7 +73,7 @@ uint16_t getReading(uint8_t channel){
 	}
 }
 
-void resetReading((uint8_t channel){
+void resetReading(uint8_t channel){
 	xSemaphoreTake(tempMtxHandle, portMAX_DELAY);
 	aggregate[channel] = 0;
 	sampleCount[channel] = 0;

@@ -118,6 +118,6 @@ int32_t adc_to_microCelcius(uint32_t s, uint32_t n){
 	int32_t uCRange = (lut[hiIndex].celcius-lut[hiIndex-1].celcius)*1000000;
 	int32_t mORange = lut[hiIndex].milliohms-lut[hiIndex-1].milliohms;
 	int32_t deltamO = mohms-lut[hiIndex-1].milliohms;
-	int64_t dividend = (int64_t)mCRange * deltamO;
-	return lowmC + (int32_t)((dividend + mORange/2)/mORange);
+	int64_t dividend = (int64_t)uCRange * deltamO;
+	return lowuC + (int32_t)((dividend + mORange/2)/mORange);
 }

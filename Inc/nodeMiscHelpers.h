@@ -21,11 +21,14 @@
 // Microsecond delay
 // Multiply by 20 for O2 and O3
 // Multiply by 16 for O0, O1, and Os
-#ifdef DEBUG
-#define delayUs(US) 	_delayUS_ASM(US * 16)
-#else
-#define delayUs(US) 	_delayUS_ASM(US * 20)
-#endif
+
+//#ifdef DEBUG
+//#define delayUs(US) 	_delayUS_ASM(US * 16)
+//#else
+//#define delayUs(US) 	_delayUS_ASM(US * 20)
+//#endif
+
+#define delayUs(US) 	_delayUS_ASM(US * 60)
 
 #define _delayUS_ASM(X) \
 	asm volatile (	"mov r0,#" #X  "\n"\
