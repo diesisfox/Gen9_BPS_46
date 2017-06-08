@@ -10,14 +10,15 @@
 #include "cmsis_os.h"
 
 //MAX_CHANNEL specifies the number of channels of the mux in use
-#define TEMP_CHANNELS 16
+#define TEMP_CHANNELS 32
 #define TEMP_MUXES ((TEMP_CHANNELS-1)/16+1)
-#define OVER_TEMPERATURE 0xffff
-#define UNDER_TEMPERATURE 0x0000
+#define OVER_TEMPERATURE 65000000
+#define UNDER_TEMPERATURE 5000000
 #define TEMP_OVERSAMPLING 16
 
 void Temp_begin(ADC_HandleTypeDef* hadc_in);
 uint16_t getReading(uint8_t channel);
+void resetReading(uint8_t channel);
 int32_t getMilliCelcius(uint8_t channel);
 int32_t getMicroCelcius(uint8_t channel);
 

@@ -213,9 +213,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//#define DISABLE_RT
+#define DISABLE_RT
 //#define DISABLE_SMT
-#define DISABLE_TMT
+//#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
 	selfStatusWord = INIT;
@@ -817,9 +817,10 @@ void doRT(void const * argument)
 		xSemaphoreTake(mcp3909_RXHandle, portMAX_DELAY);
 		mcp3909_parseChannelData(&hmcp1);
 
-		for(int i=0; i<3; i++){
+//		for(int i=0; i<3; i++){
+        for(int i=0; i<1; i++){
 #ifndef DISABLE_CAN
-			newFrame.id = i<1 ? battPwr : (i<2 ? motorPwr : lpBusPwr);
+			newFrame.id = i<1 ? battPwr : (i<2 ? battPwr : battPwr);
 			for(int j=0; j<4; j++){
 				newFrame.Data[2*j] = hmcp1.registers[2*i] >> (24-8*j);
 				newFrame.Data[2*j+1] = hmcp1.registers[2*i+1] >> (24-8*j);
@@ -970,65 +971,53 @@ void doSMT(void const * argument)
 void doTMT(void const * argument)
 {
   /* USER CODE BEGIN doTMT */
-#ifndef DISABLE_TMT
+  #ifndef DISABLE_TMT
 
-#ifndef DISABLE_CAN
-	static Can_frame_t newFrame;
-	newFrame.dlc = 8;
-	newFrame.isRemote = 0;
-	newFrame.isExt = 0;
-#else
-	osDelay(10);
-#endif
-//#ifndef DISABLE_SERIAL_OUT
-	static uint8_t intBuf[10];
-//#endif
+  #ifndef DISABLE_CAN
+  	static Can_frame_t newFrame;
+  	newFrame.dlc = 8;
+  	newFrame.isRemote = 0;
+  	newFrame.isExt = 0;
+  #else
+  	osDelay(10);
+  #endif
 
-  /* Infinite loop */
-  for(;;)
-  {
-#ifndef DISABLE_CAN
-	  if((selfStatusWord & 0x07) == ACTIVE){
-#endif
-		  uint16_t data;
-          int32_t temperature;
-		  for(int i=0; 4*i<TEMP_CHANNELS; i++){
-			  for(int j=0; j<4; j++){
-                  temperature = getMilliCelcius(4*i+j);
-				  data = getReading(4*i+j);
-                  
-				  if(data >= OVER_TEMPERATURE || data <= UNDER_TEMPERATURE)
-					  assert_bps_fault(tempOffset+i*4+j, data);
-//#ifndef DISABLE_SERIAL_OUT
-				  Serial2_writeBytes(intBuf, intToDec(temperature, intBuf));
-				  Serial2_write(',');
-//#endif
-#ifndef DISABLE_CAN
-				  newFrame.Data[2*j] = data>>8;
-				  newFrame.Data[2*j+1] = data&0xff;
-#endif
-			  }
-#ifndef DISABLE_CAN
-			  newFrame.id = tempOffset + i;
-			  bxCan_sendFrame(&newFrame);
-#endif
-		  }
-//#ifndef DISABLE_SERIAL_OUT
-		  Serial2_write('\n');
-//#endif
-		  osDelay(TMT_Interval);
-#ifndef DISABLE_CAN
-	  }else{
-		  osDelay(1);
-	  }
-#endif
-  }
+    /* Infinite loop */
+    for(;;)
+    {
+  #ifndef DISABLE_CAN
+  	  if((selfStatusWord & 0x07) == ACTIVE){
+  #endif
+          int32_t microCelcius;
+  		  for(int i=0; 2*i<TEMP_CHANNELS; i++){
+  			  for(int j=0; j<2; j++){
+				  microCelcius = getMicroCelcius(2*i+j);
+  				  resetReading(2*i+j);
 
-#else
-  for(;;){
-	  osDelay(1000);
-  }
-#endif
+  				  if(microCelcius >= OVER_TEMPERATURE || microCelcius <= UNDER_TEMPERATURE)
+  					  assert_bps_fault(tempOffset+i*2+j, microCelcius);
+  #ifndef DISABLE_CAN
+  				  *(int32_t*)(&(newFrame.Data[j*4])) = microCelcius;
+  #endif
+  			  }
+  #ifndef DISABLE_CAN
+  			  newFrame.id = tempOffset + i;
+  			  bxCan_sendFrame(&newFrame);
+  #endif
+  		  }
+  		  osDelay(TMT_Interval);
+  #ifndef DISABLE_CAN
+  	  }else{
+  		  osDelay(1);
+  	  }
+  #endif
+    }
+
+  #else
+    for(;;){
+  	  osDelay(1000);
+    }
+  #endif
   /* USER CODE END doTMT */
 }
 
