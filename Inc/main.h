@@ -81,8 +81,10 @@
 #define S0_GPIO_Port GPIOB
 #define DR2_Pin GPIO_PIN_8
 #define DR2_GPIO_Port GPIOC
+#define DR2_EXTI_IRQn EXTI9_5_IRQn
 #define DR1_Pin GPIO_PIN_9
 #define DR1_GPIO_Port GPIOC
+#define DR1_EXTI_IRQn EXTI9_5_IRQn
 #define EN2_Pin GPIO_PIN_10
 #define EN2_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
