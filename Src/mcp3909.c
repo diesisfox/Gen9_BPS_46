@@ -249,8 +249,16 @@ uint8_t mcp3909_init(MCP3909HandleTypeDef * hmcp){
 	  hmcp->registers[STATUS] |= ((hmcp->channel[i]).resolution) << (RES_CHN_OFFSET+i);
 
 	  // Set channel gain
-	  hmcp->registers[GAIN] |= ((hmcp->channel[i]).PGA) << (PGA_BOOST_LEN*i);
-	  hmcp->registers[GAIN] |= ((hmcp->channel[i]).boost) << (PGA_BOOST_LEN*i + BOOST_OFFSET);
+      if(i % 2){
+        // Odd channels
+        hmcp->registers[GAIN] |= ((hmcp->channel[i]).boost) << (PGA_BOOST_LEN*i);
+        hmcp->registers[GAIN] |= ((hmcp->channel[i]).PGA) << (PGA_BOOST_LEN*i+BOOST_OFFSET_ODD);
+      }
+      else {
+        // Even channels 
+        hmcp->registers[GAIN] |= ((hmcp->channel[i]).boost) << (PGA_BOOST_LEN*i+BOOST_OFFSET_EVEN);
+        hmcp->registers[GAIN] |= ((hmcp->channel[i]).PGA) << (PGA_BOOST_LEN*i);
+      }
   }
 
   uint8_t tempRegBytes[3];

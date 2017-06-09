@@ -182,16 +182,20 @@ void EM_Init(){
 	hmcp1.phase[1] = 0;
 	hmcp1.phase[2] = 0;
 
+    // TODO: Shutdown channels 2-5 for BPS
 	for(uint8_t i= 0; i < MAX_CHANNEL_NUM; i++){
 		hmcp1.channel[i].PGA = PGA_1;
-		hmcp1.channel[i].boost = BOOST_OFF;
-		hmcp1.channel[i].dither = DITHER_OFF;
+		hmcp1.channel[i].boost = BOOST_ON;
+		hmcp1.channel[i].dither = DITHER_ON;
 		hmcp1.channel[i].reset = RESET_OFF;
 		hmcp1.channel[i].shutdown = SHUTDOWN_OFF;
 		hmcp1.channel[i].resolution = RES_24;
 	}
     
-    hmcp1.channel[1].PGA = PGA_4;
+    // Amplify current sense channels to improve dynamic resolution
+    hmcp1.channel[1].PGA = PGA_2;
+    hmcp1.channel[3].PGA = PGA_4;   // TODO: Remove for BPS
+    hmcp1.channel[5].PGA = PGA_4;   // TODO: Remove for BPS
 
 	hmcp1.extCLK = 0;
 	hmcp1.extVREF = 0;
@@ -826,9 +830,10 @@ void doRT(void const * argument)
 		mcp3909_parseChannelData(&hmcp1);
 
 //		for(int i=0; i<3; i++){
-        for(int i=0; i<1; i++){
+        for(int i=0; i<3; i++){
 #ifndef DISABLE_CAN
 			newFrame.id = i<1 ? battPwr : (i<2 ? battPwr : battPwr);
+            newFrame.id = i<1 ? 0x201 : (i<2 ? 0x202 : 0x203);
 			*(uint32_t*)(&(newFrame.Data[0])) = hmcp1.registers[2*i];
             *(uint32_t*)(&(newFrame.Data[4])) = hmcp1.registers[2*i+1];
             bxCan_sendFrame(&newFrame);

@@ -53,8 +53,9 @@
 #define PGA_16      (4U)
 #define PGA_32      (5U)
 
-#define BOOST_OFFSET     (3U)
-#define PGA_BOOST_LEN    (5U)
+#define BOOST_OFFSET_ODD     (1U)
+#define BOOST_OFFSET_EVEN    (3U)
+#define PGA_BOOST_LEN        (4U)
 
 // Boost settings
 #define BOOST_ON    (1U)
