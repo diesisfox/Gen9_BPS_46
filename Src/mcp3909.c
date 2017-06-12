@@ -9,6 +9,7 @@
 #include "nodeMiscHelpers.h"
 #include "cmsis_os.h"
 #include "stm32f4xx_hal_spi.h"
+#include "psb1cal.h"
 
 #define REG_LEN           (3U)
 #define SPI_TIMEOUT		1000
@@ -74,8 +75,8 @@ uint8_t mcp3909_SPI_ReadReg(MCP3909HandleTypeDef * hmcp, uint8_t address, uint8_
 	if(hmcp->readType != readType){
 		hmcp->readType = readType;	// Update Handle status
 		MODIFY_REG(hmcp->registers[STATUS], (0x03) << READ_MODE_OFFSET, readType << READ_MODE_OFFSET);	// Update register data
-        
-        
+
+
 		// Assemble CONTROL BYTE to write STATUS register
 		// | 0 | 1 | STATUS | W |
 		// 0 1 0 1 0 0 1 0
@@ -255,7 +256,7 @@ uint8_t mcp3909_init(MCP3909HandleTypeDef * hmcp){
         hmcp->registers[GAIN] |= ((hmcp->channel[i]).PGA) << (PGA_BOOST_LEN*i+BOOST_OFFSET_ODD);
       }
       else {
-        // Even channels 
+        // Even channels
         hmcp->registers[GAIN] |= ((hmcp->channel[i]).boost) << (PGA_BOOST_LEN*i+BOOST_OFFSET_EVEN);
         hmcp->registers[GAIN] |= ((hmcp->channel[i]).PGA) << (PGA_BOOST_LEN*i);
       }
@@ -388,5 +389,3 @@ void mcp3909_parseChannelData(MCP3909HandleTypeDef * hmcp){
 		hmcp->registers[i] = bytesToReg((hmcp->pRxBuf)+REG_LEN*i+CTRL_LEN);
 	}
 }
-
-

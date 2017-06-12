@@ -4,37 +4,37 @@
   * Description        : Main program body
   ******************************************************************************
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V. 
+  * Copyright (c) 2017 STMicroelectronics International N.V.
   * All rights reserved.
   *
-  * Redistribution and use in source and binary forms, with or without 
+  * Redistribution and use in source and binary forms, with or without
   * modification, are permitted, provided that the following conditions are met:
   *
-  * 1. Redistribution of source code must retain the above copyright notice, 
+  * 1. Redistribution of source code must retain the above copyright notice,
   *    this list of conditions and the following disclaimer.
   * 2. Redistributions in binary form must reproduce the above copyright notice,
   *    this list of conditions and the following disclaimer in the documentation
   *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
+  * 3. Neither the name of STMicroelectronics nor the names of other
+  *    contributors to this software may be used to endorse or promote products
   *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
+  * 4. This software, including modifications and/or derivative works of this
   *    software, must execute solely and exclusively on microcontroller or
   *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
+  * 5. Redistribution and use of this software other than as permitted under
+  *    this license is void and will automatically terminate your rights under
+  *    this license.
   *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
   * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
+  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
   * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
   * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
   * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
@@ -53,6 +53,7 @@
 #include "nodeMiscHelpers.h"
 #include "nodeConf.h"
 #include "../../CAN_ID.h"
+#include "psb1cal.h"
 
 // RTOS Task functions + helpers
 #include "Can_Processor.h"
@@ -191,7 +192,7 @@ void EM_Init(){
 		hmcp1.channel[i].shutdown = SHUTDOWN_OFF;
 		hmcp1.channel[i].resolution = RES_24;
 	}
-    
+
     // Amplify current sense channels to improve dynamic resolution
     hmcp1.channel[1].PGA = PGA_4;
     hmcp1.channel[3].PGA = PGA_4;   // TODO: Remove for BPS
@@ -373,11 +374,11 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
- 
+
 
   /* Start scheduler */
   osKernelStart();
-  
+
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -401,13 +402,13 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
 
-    /**Configure the main internal regulator output voltage 
+    /**Configure the main internal regulator output voltage
     */
   __HAL_RCC_PWR_CLK_ENABLE();
 
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    /**Initializes the CPU, AHB and APB busses clocks 
+    /**Initializes the CPU, AHB and APB busses clocks
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -423,7 +424,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-    /**Initializes the CPU, AHB and APB busses clocks 
+    /**Initializes the CPU, AHB and APB busses clocks
     */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -437,11 +438,11 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-    /**Configure the Systick interrupt time 
+    /**Configure the Systick interrupt time
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
-    /**Configure the Systick 
+    /**Configure the Systick
     */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
@@ -455,7 +456,7 @@ static void MX_ADC1_Init(void)
 
   ADC_ChannelConfTypeDef sConfig;
 
-    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
     */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
@@ -474,7 +475,7 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
-    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
     */
   sConfig.Channel = ADC_CHANNEL_6;
   sConfig.Rank = 1;
@@ -484,7 +485,7 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
-    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
     */
   sConfig.Channel = ADC_CHANNEL_14;
   sConfig.Rank = 2;
@@ -493,7 +494,7 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
-    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
     */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 3;
@@ -608,10 +609,10 @@ static void MX_WWDG_Init(void)
 
 }
 
-/** 
+/**
   * Enable DMA controller clock
   */
-static void MX_DMA_Init(void) 
+static void MX_DMA_Init(void)
 {
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
@@ -642,9 +643,9 @@ static void MX_DMA_Init(void)
 
 }
 
-/** Configure pins as 
-        * Analog 
-        * Input 
+/** Configure pins as
+        * Analog
+        * Input
         * Output
         * EVENT_OUT
         * EXTI
@@ -669,7 +670,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, LD2_Pin|EN2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, FAN_Pin|EN1_Pin|S2_Pin|S1_Pin 
+  HAL_GPIO_WritePin(GPIOB, FAN_Pin|EN1_Pin|S2_Pin|S1_Pin
                           |S3_Pin|S0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -695,9 +696,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : FAN_Pin S2_Pin S1_Pin S3_Pin 
+  /*Configure GPIO pins : FAN_Pin S2_Pin S1_Pin S3_Pin
                            S0_Pin */
-  GPIO_InitStruct.Pin = FAN_Pin|S2_Pin|S1_Pin|S3_Pin 
+  GPIO_InitStruct.Pin = FAN_Pin|S2_Pin|S1_Pin|S3_Pin
                           |S0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -776,7 +777,7 @@ void doApplication(void const * argument)
 //	  }
 	  osDelay(10000);
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* doProcessCan function */
@@ -828,27 +829,39 @@ void doRT(void const * argument)
 		xSemaphoreTake(mcp3909_RXHandle, portMAX_DELAY);
 		mcp3909_parseChannelData(&hmcp1);
 
-//		for(int i=0; i<3; i++){
-        for(int i=0; i<3; i++){
-#ifndef DISABLE_CAN
-			newFrame.id = i<1 ? battPwr : (i<2 ? battPwr : battPwr);
-            newFrame.id = i<1 ? 0x201 : (i<2 ? 0x202 : 0x203);
-			*(uint32_t*)(&(newFrame.Data[0])) = hmcp1.registers[2*i];
-            *(uint32_t*)(&(newFrame.Data[4])) = hmcp1.registers[2*i+1];
-            bxCan_sendFrame(&newFrame);
-			// there is no limit checking/bps kill for RT task.
-#endif
-#ifndef DISABLE_SERIAL_OUT
-			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i], intBuf));
-			Serial2_write(',');
-			Serial2_writeBytes(intBuf, intToDec(hmcp1.registers[2*i+1], intBuf));
-			Serial2_write(',');
-#endif
-		}
-#ifndef DISABLE_SERIAL_OUT
-		Serial2_write('\n');
-#endif
+		#ifndef DISABLE_CAN
+		int32_t temp;
+
+		newFrame.id = battPwr;
+		temp = psb1ch0Map(__REV(hmcp1.registers[0]));
+		if(temp>PSB_OV || temp<PSB_UV) assert_bps_fault(0x200, temp);
+		*(int32_t*)(&(newFrame.Data[0])) = temp;
+		temp= psb1ch1Map(__REV(hmcp1.registers[1]));
+		if(temp>PSB_OA || temp<PSB_UA) assert_bps_fault(0x201, temp);
+		*(int32_t*)(&(newFrame.Data[4])) = temp;
+		bxCan_sendFrame(&newFrame);
+
+		// newFrame.id = motorPwr;
+		// temp = psb1ch0Map(__REV(hmcp1.registers[2]));
+		// if(temp>PSB_OV || temp<PSB_UV) assert_bps_fault(0x202, temp);
+		// *(int32_t*)(&(newFrame.Data[0])) = temp;
+		// temp= psb1ch1Map(__REV(hmcp1.registers[3]));
+		// if(temp>PSB_OA || temp<PSB_UA) assert_bps_fault(0x203, temp);
+		// *(int32_t*)(&(newFrame.Data[4])) = temp;
+		// bxCan_sendFrame(&newFrame);
+		
+		// newFrame.id = lpBusPwr;
+		// temp = psb1ch0Map(__REV(hmcp1.registers[4]));
+		// if(temp>PSB_OV || temp<PSB_UV) assert_bps_fault(0x204, temp);
+		// *(int32_t*)(&(newFrame.Data[0])) = temp;
+		// temp= psb1ch1Map(__REV(hmcp1.registers[5]));
+		// if(temp>PSB_OA || temp<PSB_UA) assert_bps_fault(0x205, temp);
+		// *(int32_t*)(&(newFrame.Data[4])) = temp;
+		// bxCan_sendFrame(&newFrame);
+		#endif
+
 		// XXX: Energy metering algorithm
+
 		mcp3909_sleep(&hmcp1);
 		HAL_WWDG_Refresh(&hwwdg);
 		osDelayUntil(&previousWaitTime, RT_Interval);
@@ -1131,7 +1144,7 @@ void Error_Handler(void)
   while(1)
   {
   }
-  /* USER CODE END Error_Handler */ 
+  /* USER CODE END Error_Handler */
 }
 
 #ifdef USE_FULL_ASSERT
@@ -1156,10 +1169,10 @@ void assert_failed(uint8_t* file, uint32_t line)
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-*/ 
+*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

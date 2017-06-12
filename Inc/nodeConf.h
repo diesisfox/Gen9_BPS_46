@@ -47,6 +47,11 @@
 
 #define FToffset		0x0d0
 
+#define PSB_OA			4000000		//uA
+#define PSB_UA			-4000000	//uA
+#define PSB_OV			140000000	//uV
+#define PSB_UV			80000000	//uV
+
 static const uint32_t firmwareString = 0x00000001;			// Firmware Version string
 static const uint8_t selfNodeID = bps_nodeID;					// The nodeID of this node
 extern uint32_t selfStatusWord;	// Initialize
