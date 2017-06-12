@@ -193,7 +193,7 @@ void EM_Init(){
 	}
     
     // Amplify current sense channels to improve dynamic resolution
-    hmcp1.channel[1].PGA = PGA_2;
+    hmcp1.channel[1].PGA = PGA_4;
     hmcp1.channel[3].PGA = PGA_4;   // TODO: Remove for BPS
     hmcp1.channel[5].PGA = PGA_4;   // TODO: Remove for BPS
 
