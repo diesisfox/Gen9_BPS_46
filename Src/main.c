@@ -46,13 +46,13 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
+#include "../../CAN_ID.h"
+#include "nodeConf.h"
 #include "can.h"
 #include "serial.h"
 #include "ts_lib.h"
 #include "thermistor.h"
 #include "nodeMiscHelpers.h"
-#include "nodeConf.h"
-#include "../../CAN_ID.h"
 #include "psb1cal.h"
 
 // RTOS Task functions + helpers
@@ -274,7 +274,7 @@ int main(void)
      * LTC68041 SETUP
      */
   //  Set up the global ADC configs for the LTC6804
-  //  ltc68041ChainInitStruct bmsInitParams[TOTAL_IC];
+  //  ltc68041ChainInitStruct bmsInitParams[LTC_TOTAL_IC];
   //  LTC68041_Initialize(&hbms1, bmsInitParams);
     hbms1.hspi = &hspi3;
 
@@ -833,12 +833,12 @@ void doRT(void const * argument)
 		int32_t temp;
 
 		newFrame.id = battPwr;
-		temp = psb1ch0Map(__REV(hmcp1.registers[0]));
+		temp = psb1ch0Map((hmcp1.registers[0]));
 		if(temp>PSB_OV || temp<PSB_UV) assert_bps_fault(0x200, temp);
-		*(int32_t*)(&(newFrame.Data[0])) = temp;
-		temp= psb1ch1Map(__REV(hmcp1.registers[1]));
+		*(int32_t*)(&(newFrame.Data[0])) = __REV(temp);
+		temp= psb1ch1Map((hmcp1.registers[1]));
 		if(temp>PSB_OA || temp<PSB_UA) assert_bps_fault(0x201, temp);
-		*(int32_t*)(&(newFrame.Data[4])) = temp;
+		*(int32_t*)(&(newFrame.Data[4])) = __REV(temp);
 		bxCan_sendFrame(&newFrame);
 
 		// newFrame.id = motorPwr;
@@ -906,7 +906,7 @@ void doSMT(void const * argument)
 		  ltc68041_startCVConv(&hbms1);
 
 		  // Delay enough time but also make sure that the chip doesn't go into sleep mode
-		for(uint8_t i = 0; i < 3 * TOTAL_IC; i++){
+		for(uint8_t i = 0; i < 3 * LTC_TOTAL_IC; i++){
 			osDelay(3);
 			wakeup_sleep();
 		}
@@ -975,7 +975,7 @@ void doSMT(void const * argument)
 //			}
 //		}
 
-		osDelay(SMT_Interval - (8+TOTAL_IC*4));
+		osDelay(SMT_Interval - (8+LTC_TOTAL_IC*4));
 #ifndef DISABLE_CAN
 	  }else{
 		  osDelay(1);

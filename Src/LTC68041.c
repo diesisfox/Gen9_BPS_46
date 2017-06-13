@@ -45,7 +45,7 @@ int8_t ltc68041_writeRegGroup(bmsChainHandleTypeDef * hbms, uint16_t address, ui
 	(hbms->spiTxBuf)[3] = tempPEC & 0xFF;
 
 	// Assemble the data for each board on the chain
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic++){
 		// Write the data into the buffer
 		for(uint8_t current_byte = 0; current_byte < REG_LEN; current_byte++){
 			(hbms->spiTxBuf)[current_byte + current_ic*TX_REG_LEN + TX_CMD_LEN] = data[current_byte];
@@ -68,7 +68,7 @@ int8_t ltc68041_writeRegGroup(bmsChainHandleTypeDef * hbms, uint16_t address, ui
 
 	// Transmit the command via DMA
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_RESET);
-	return HAL_SPI_Transmit_DMA(hbms->hspi, hbms->spiTxBuf, TX_CMD_LEN+(TX_REG_LEN*TOTAL_IC));
+	return HAL_SPI_Transmit_DMA(hbms->hspi, hbms->spiTxBuf, TX_CMD_LEN+(TX_REG_LEN*LTC_TOTAL_IC));
 }
 
 int8_t ltc68041_writeRegGroup_sync(bmsChainHandleTypeDef * hbms, uint16_t address, uint8_t * data, uint32_t timeout){
@@ -84,7 +84,7 @@ int8_t ltc68041_writeRegGroup_sync(bmsChainHandleTypeDef * hbms, uint16_t addres
 	(hbms->spiTxBuf)[3] = tempPEC & 0xFF;
 
 	// Assemble the data for each board on the chain
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic++){
 		// Write the data into the buffer
 		for(uint8_t current_byte = 0; current_byte < REG_LEN; current_byte++){
 			(hbms->spiTxBuf)[current_byte + current_ic*TX_REG_LEN + TX_CMD_LEN] = data[current_byte];
@@ -107,7 +107,7 @@ int8_t ltc68041_writeRegGroup_sync(bmsChainHandleTypeDef * hbms, uint16_t addres
 
 	// Transmit the command via DMA
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_RESET);
-	retCode = HAL_SPI_Transmit(hbms->hspi, hbms->spiTxBuf, TX_CMD_LEN+(TX_REG_LEN*TOTAL_IC), timeout);
+	retCode = HAL_SPI_Transmit(hbms->hspi, hbms->spiTxBuf, TX_CMD_LEN+(TX_REG_LEN*LTC_TOTAL_IC), timeout);
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_SET);
 	return retCode;
 }
@@ -175,7 +175,7 @@ int8_t ltc68041_readRegGroup(bmsChainHandleTypeDef * hbms, uint16_t address){
 	int8_t retCode = 0;
 
 	// Clear Tx Buffer
-	for(uint8_t i = 4 ; i < TX_CMD_LEN + TOTAL_IC * (TX_REG_LEN);i++){
+	for(uint8_t i = 4 ; i < TX_CMD_LEN + LTC_TOTAL_IC * (TX_REG_LEN);i++){
 		(hbms->spiTxBuf)[i] = 0;
 	}
 
@@ -202,14 +202,14 @@ int8_t ltc68041_readRegGroup(bmsChainHandleTypeDef * hbms, uint16_t address){
 
 	// Transmit the command via DMA
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive_DMA(hbms->hspi, hbms->spiTxBuf, hbms->spiRxBuf, TX_CMD_LEN+(TX_REG_LEN*TOTAL_IC));
+	HAL_SPI_TransmitReceive_DMA(hbms->hspi, hbms->spiTxBuf, hbms->spiRxBuf, TX_CMD_LEN+(TX_REG_LEN*LTC_TOTAL_IC));
 
 	// Suspend until we get the semaphore that the transmission is
 	xSemaphoreTake(bmsTRxCompleteHandle, portMAX_DELAY);
 
 	// The data now sits in the spiRxBuf, with an offset of TX_CMD_LEN since the Rx FIFO is active during Tx
 	// PEC check
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		uint16_t RxPEC = ((hbms->spiRxBuf)[current_ic * TX_REG_LEN + TX_CMD_LEN + REG_LEN] << 8) +
 				(hbms->spiRxBuf)[current_ic * TX_REG_LEN + TX_CMD_LEN + REG_LEN + 1];
 		tempPEC = pec15_calc(REG_LEN, &((hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN]));
@@ -225,7 +225,7 @@ int8_t ltc68041_readRegGroup_sync(bmsChainHandleTypeDef * hbms, uint16_t address
 	int8_t retCode = 0;
 
 	// Clear Tx Buffer
-	for(uint8_t i = 4 ; i < TX_CMD_LEN + TOTAL_IC * (TX_REG_LEN);i++){
+	for(uint8_t i = 4 ; i < TX_CMD_LEN + LTC_TOTAL_IC * (TX_REG_LEN);i++){
 		(hbms->spiTxBuf)[i] = 0;
 	}
 
@@ -252,12 +252,12 @@ int8_t ltc68041_readRegGroup_sync(bmsChainHandleTypeDef * hbms, uint16_t address
 
 	// Transmit the command via DMA
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(hbms->hspi, hbms->spiTxBuf, hbms->spiRxBuf, TX_CMD_LEN+(TX_REG_LEN*TOTAL_IC), timeout);
+	HAL_SPI_TransmitReceive(hbms->hspi, hbms->spiTxBuf, hbms->spiRxBuf, TX_CMD_LEN+(TX_REG_LEN*LTC_TOTAL_IC), timeout);
 	HAL_GPIO_WritePin(LTC_CS_GPIO_Port, LTC_CS_Pin, GPIO_PIN_SET);
 
 	// The data now sits in the spiRxBuf, with an offset of TX_CMD_LEN since the Rx FIFO is active during Tx
 	// PEC check
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		uint16_t RxPEC = ((hbms->spiRxBuf)[current_ic * TX_REG_LEN + TX_CMD_LEN + REG_LEN] << 8) +
 				(hbms->spiRxBuf)[current_ic * TX_REG_LEN + TX_CMD_LEN + REG_LEN + 1];
 		tempPEC = pec15_calc(REG_LEN, &((hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN]));
@@ -374,14 +374,14 @@ int8_t ltc68041_cvTest(bmsChainHandleTypeDef * hbms){
 	uint16_t regVal;
     retCode = ltc68041_writeCommand_sync(hbms, CVST_T | MD_BITS | ST_BITS, SPI_TIMEOUT);	// Cell voltage self-test command
 
-    for(uint8_t i = 0; i < TOTAL_IC; i++){
+    for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
 		wakeup_idle();		// Keep chip awake
 		HAL_Delay(1);		// Delay to wait for chip completion
 	}
 
     // Check CV group A
     retCode = ltc68041_readRegGroup_sync(hbms, RDCVA, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		for(uint8_t i = 0; i < CV_PER_REG; i= i + 2){
 			regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
 			if( regVal != ST_VALUE){
@@ -394,7 +394,7 @@ int8_t ltc68041_cvTest(bmsChainHandleTypeDef * hbms){
 
     // Check CV group B
     retCode = ltc68041_readRegGroup_sync(hbms, RDCVB, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < CV_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -407,7 +407,7 @@ int8_t ltc68041_cvTest(bmsChainHandleTypeDef * hbms){
 
     // Check CV group C
     retCode = ltc68041_readRegGroup_sync(hbms, RDCVC, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < CV_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -420,7 +420,7 @@ int8_t ltc68041_cvTest(bmsChainHandleTypeDef * hbms){
 
     // Check CV group D
     retCode = ltc68041_readRegGroup_sync(hbms, RDCVD, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < CV_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -445,7 +445,7 @@ int8_t ltc68041_auxTest(bmsChainHandleTypeDef * hbms){
 	int8_t retCode;
 	uint16_t regVal;
 	retCode = ltc68041_writeCommand_sync(hbms, AXST_T | MD_BITS | ST_BITS, SPI_TIMEOUT);	// Cell voltage self-test command
-//	for(uint8_t i = 0; i < TOTAL_IC; i++){
+//	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
 //		wakeup_idle();		// Keep chip awake
 //		HAL_Delay(1);		// Delay to wait for chip completion
 //	}
@@ -453,7 +453,7 @@ int8_t ltc68041_auxTest(bmsChainHandleTypeDef * hbms){
 
 	// Check AUX group A
 	retCode = ltc68041_readRegGroup_sync(hbms, RDAUXA, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < AUX_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -466,7 +466,7 @@ int8_t ltc68041_auxTest(bmsChainHandleTypeDef * hbms){
 
 	// Check AUX group B
 	retCode = ltc68041_readRegGroup_sync(hbms, RDAUXB, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < AUX_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -497,7 +497,7 @@ int8_t ltc68041_statTest(bmsChainHandleTypeDef * hbms){
 HAL_Delay(1);
 	wakeup_idle();
 	retCode = ltc68041_readRegGroup_sync(hbms, RDSTATA, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < STAT_PER_REG; i= i + 2){
     		regVal = ((hbms->spiRxBuf)[i + 1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[i + current_ic*TX_REG_LEN + TX_CMD_LEN];
     		if( regVal != ST_VALUE){
@@ -513,7 +513,7 @@ HAL_Delay(1);
 	wakeup_idle();
     wakeup_idle();
     retCode = ltc68041_readRegGroup_sync(hbms, RDSTATB, SPI_TIMEOUT);
-    for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+    for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		regVal = ((hbms->spiRxBuf)[1 + current_ic*TX_REG_LEN + TX_CMD_LEN] << 8) | (hbms->spiRxBuf)[current_ic*TX_REG_LEN + TX_CMD_LEN];
 		if( regVal != ST_VALUE){
 			// Register group value mismatch
@@ -546,7 +546,7 @@ int8_t ltc68041_muxTest(bmsChainHandleTypeDef * hbms){
 int8_t ltc68041_adstatTest(bmsChainHandleTypeDef * hbms){
 	int8_t retCode;
 	retCode = ltc68041_writeCommand_sync(hbms, ADSTAT_T | MD_BITS, SPI_TIMEOUT);	// Read all diagnostic variables
-	for(uint8_t i = 0; i < TOTAL_IC; i++){
+	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
 		wakeup_idle();		// Keep chip awake
 		HAL_Delay(2);		// Delay to wait for chip completion
 	}
@@ -556,7 +556,7 @@ int8_t ltc68041_adstatTest(bmsChainHandleTypeDef * hbms){
 	retCode = ltc68041_readRegGroup_sync(hbms, RDSTATA, SPI_TIMEOUT);
 	ltc68041_parseSTAT(hbms, A);
 	// Check analog reference values
-	for(uint8_t i = 0; i < TOTAL_IC; i++){
+	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
 		if(((hbms->board[i]).STATR[2] < VA_L) || ((hbms->board[i]).STATR[2] > VA_H)){
 			retCode = i * 10 + 2;
 		}
@@ -565,7 +565,7 @@ int8_t ltc68041_adstatTest(bmsChainHandleTypeDef * hbms){
 	retCode = ltc68041_readRegGroup_sync(hbms, RDSTATB, SPI_TIMEOUT);
 	ltc68041_parseSTAT(hbms, B);
 	// Check values
-	for(uint8_t i = 0; i < TOTAL_IC; i++){
+	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
 		// THSD bit
 		// Must right shift 8 bits since the byte orders are flipped
 		if(((hbms->board[i]).STATR[5] >> 8) & 0x1){
@@ -595,14 +595,14 @@ int8_t ltc68041_accuracyTest(bmsChainHandleTypeDef * hbms){
 	int8_t retCode;
 	retCode = ltc68041_writeCommand_sync(hbms, ADAX_T | MD_BITS | 0x6, SPI_TIMEOUT);	// Start conversion of VREF2 on AuxB
 	
-    for(uint8_t i = 0; i < TOTAL_IC+1; i++){
+    for(uint8_t i = 0; i < LTC_TOTAL_IC+1; i++){
 		wakeup_idle();		// Keep chip awake
 		HAL_Delay(2);		// Delay to wait for chip completion
 	}
 	retCode = ltc68041_readRegGroup_sync(hbms, RDAUXB, SPI_TIMEOUT);
 	ltc68041_parseAUX(hbms, B);
 
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic++){
 		if(((hbms->board)[current_ic].AUXR[5] < VREF2_L) | ((hbms->board)[current_ic].AUXR[5] > VREF2_H)){
 			retCode = current_ic * 10 + 1;
 		}
@@ -663,7 +663,7 @@ uint8_t ltc68041_startCOMM(bmsChainHandleTypeDef * hbms){
 // Byte orders 4 and 5, 2 and 3 are flipped
 void ltc68041_parseSTAT(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 	uint16_t tempData;
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		for(uint8_t current_reg = 0; current_reg < STAT_PER_REG; current_reg++){
 			// Assemble 2 bytes from the status register into a uint16_t
 			tempData = ((hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2 + 1] << 8) | (hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2];
@@ -675,7 +675,7 @@ void ltc68041_parseSTAT(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 // TESTED
 void ltc68041_parseCV(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 	uint16_t tempData;
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		for(uint8_t current_reg = 0; current_reg < CV_PER_REG; current_reg++){
 			// Assemble 2 bytes from the status register into a uint16_t
 			tempData = ((hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2 + 1] << 8) | (hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2];
@@ -687,7 +687,7 @@ void ltc68041_parseCV(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 // TODO: test
 void ltc68041_parseAUX(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 	uint16_t tempData;
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		for(uint8_t current_reg = 0; current_reg < AUX_PER_REG; current_reg++){
 			// Assemble 2 bytes from the status register into a uint16_t
 			tempData = ((hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2 + 1] << 8) | (hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg*2];
@@ -699,7 +699,7 @@ void ltc68041_parseAUX(bmsChainHandleTypeDef * hbms, REG_GROUP group){
 // TESTED
 void ltc68041_parseCFG(bmsChainHandleTypeDef * hbms){
 	// Copy the spiRxBuf bytes into the CFGR array
-	for(uint8_t current_ic = 0; current_ic < TOTAL_IC; current_ic ++){
+	for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
 		for(uint8_t current_reg = 0; current_reg < REG_LEN; current_reg++){
 			(hbms->board)[current_ic].CFGR[current_reg] = (hbms->spiRxBuf)[TX_CMD_LEN + current_ic * TX_REG_LEN + current_reg];
 		}

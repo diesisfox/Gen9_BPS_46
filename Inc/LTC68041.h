@@ -3,20 +3,28 @@
 #ifndef LTC68041_H_
 #define LTC68041_H_
 
+#include "nodeConf.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "../../CAN_ID.h"
 
 // BMS Chain defines
-#define TOTAL_IC      3  	// Number of boards in the stack
+#ifndef LTC_TOTAL_IC
+#define LTC_TOTAL_IC      3  	// Number of boards in the stack
+#endif
+#ifndef VOV
+#define VOV			  (2715U)	// Overvoltage set point 4.344V
+#endif
+#ifndef VUV
+#define VUV			  (1720U)	// Undervoltage set point 2.754V
+#endif
+
+// #define CB_ON	  // Enable cell-balancing
+
 #define SPI_TIMEOUT	  500	// Timeout duration - 500ms
 #define ST_BITS		  (SELF_TEST_2 << ST_OFFSET)	// Self test mode 2
 #define ST_VALUE	  0x6AAA						// Expected self-test value
 #define MD_BITS		  (MD_MODE_2  << MD_OFFSET)		// 7Khz / 3Khz ADC Mode group
-#define VOV			  (2715U)	// Overvoltage set point 4.344V
-//#define VOV			  (2500U)	// Overvoltage set point 4000.0 mV
-#define VUV			  (1720U)	// Undervoltage set point 2.754V
-// #define CB_ON	  // Enable cell-balancing
 
 // LTC6804-1 Dependent defines
 // Register lengths and numbers
@@ -96,9 +104,9 @@ typedef struct {
 // spiTxBuf sized according to size of cmd + register length + pec
 typedef struct {
   SPI_HandleTypeDef * hspi;   // SPI Handle
-  uint8_t   spiRxBuf[TX_CMD_LEN + TOTAL_IC * (TX_REG_LEN)];       // SPI receive buffer
-  uint8_t   spiTxBuf[TX_CMD_LEN + TOTAL_IC * (TX_REG_LEN)];       // SPI transmit buffer
-  LTC68041HandleTypeDef   board[TOTAL_IC];          // Handle buffer to store all the board info for each board
+  uint8_t   spiRxBuf[TX_CMD_LEN + LTC_TOTAL_IC * (TX_REG_LEN)];       // SPI receive buffer
+  uint8_t   spiTxBuf[TX_CMD_LEN + LTC_TOTAL_IC * (TX_REG_LEN)];       // SPI transmit buffer
+  LTC68041HandleTypeDef   board[LTC_TOTAL_IC];          // Handle buffer to store all the board info for each board
 } bmsChainHandleTypeDef;
 
 typedef enum {

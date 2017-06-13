@@ -1189,6 +1189,9 @@
                 <name>$PROJ_DIR$\..\Src\nodeMiscHelpers.c</name>
             </file>
             <file>
+                <name>$PROJ_DIR$\..\Src\psb1cal.c</name>
+            </file>
+            <file>
                 <name>$PROJ_DIR$\..\Src\serial.c</name>
             </file>
             <file>
