@@ -25,6 +25,7 @@
 #define ST_BITS		  (SELF_TEST_2 << ST_OFFSET)	// Self test mode 2
 #define ST_VALUE	  0x6AAA						// Expected self-test value
 #define MD_BITS		  (MD_MODE_2  << MD_OFFSET)		// 7Khz / 3Khz ADC Mode group
+// TODO: Fix timing issues with MD_MODE
 
 // LTC6804-1 Dependent defines
 // Register lengths and numbers

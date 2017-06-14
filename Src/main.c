@@ -222,8 +222,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//#define DISABLE_RT
-#define DISABLE_SMT
+#define DISABLE_RT
+//#define DISABLE_SMT
 #define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
@@ -281,6 +281,7 @@ int main(void)
     HAL_Delay(3);	// Empirically tested wait to correct SPI failing; see associated commit note
 
     if(ltc68041_Initialize(&hbms1) != 0){
+      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin,1);
   	  for(;;);
     }
     HAL_WWDG_Refresh(&hwwdg);
@@ -934,7 +935,8 @@ void doSMT(void const * argument)
 
 #define vovTo100uV(x) ((x+1)*16)
 
-		for(uint8_t i=0; i<3; i++){
+		for(uint8_t i=0; i<LTC_TOTAL_IC; i++){
+          // TODO BUG INFO: Change following number per board
 			for(uint8_t j=0; j<12; j+=4){
 #ifndef DISABLE_CAN
 				newFrame.id = voltOffset+i*3+j/4;
