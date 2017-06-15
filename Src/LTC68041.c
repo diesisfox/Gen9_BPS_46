@@ -152,7 +152,7 @@ int8_t ltc68041_writeCommand_sync(bmsChainHandleTypeDef * hbms, uint16_t cmd, ui
 	(hbms->spiTxBuf)[2] = (tempPEC >> 8) & 0xFF;
 	(hbms->spiTxBuf)[3] = tempPEC & 0xFF;
 
-	//wakeup_idle(); 	//This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
+	wakeup_idle(); 	//This will guarantee that the LTC6804 isoSPI port is awake.This command can be removed.
 
 	// Wait for the SPI peripheral to finish TXing if it's busy
 	while(!((HAL_SPI_GetState(hbms->hspi) == HAL_SPI_STATE_READY) ||
@@ -445,11 +445,10 @@ int8_t ltc68041_auxTest(bmsChainHandleTypeDef * hbms){
 	int8_t retCode;
 	uint16_t regVal;
 	retCode = ltc68041_writeCommand_sync(hbms, AXST_T | MD_BITS | ST_BITS, SPI_TIMEOUT);	// Cell voltage self-test command
-//	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
-//		wakeup_idle();		// Keep chip awake
-//		HAL_Delay(1);		// Delay to wait for chip completion
-//	}
-	HAL_Delay(2);
+    for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
+		wakeup_idle();		// Keep chip awake
+		HAL_Delay(1);		// Delay to wait for chip completion
+	}
 
 	// Check AUX group A
 	retCode = ltc68041_readRegGroup_sync(hbms, RDAUXA, SPI_TIMEOUT);
@@ -491,11 +490,12 @@ int8_t ltc68041_statTest(bmsChainHandleTypeDef * hbms){
 	int8_t retCode;
 	uint16_t regVal;
 	retCode = ltc68041_writeCommand_sync(hbms, STATST_T | MD_BITS | ST_BITS, SPI_TIMEOUT);	// Cell voltage self-test command
-	HAL_Delay(1);		// Delay to wait for chip completion
+	for(uint8_t i = 0; i < LTC_TOTAL_IC; i++){
+		wakeup_idle();		// Keep chip awake
+		HAL_Delay(1);		// Delay to wait for chip completion
+	}
 
 	// Check STAT group A
-HAL_Delay(1);
-	wakeup_idle();
 	retCode = ltc68041_readRegGroup_sync(hbms, RDSTATA, SPI_TIMEOUT);
     for(uint8_t current_ic = 0; current_ic < LTC_TOTAL_IC; current_ic ++){
         for(uint8_t i = 0; i < STAT_PER_REG; i= i + 2){
