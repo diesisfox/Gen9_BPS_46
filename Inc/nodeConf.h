@@ -63,6 +63,7 @@ extern uint32_t selfStatusWord;	// Initialize
 #define LTC_TOTAL_IC    3  	// Number of LTC boards in the stack
 #define VUV             (1720U)	// LTC Undervoltage set point 2.754V
 #define VOV             (2715U)	// LTC Overvoltage set point 4.344V
+static const uint16_t LTC_CELL_EN[] = {0x3ff, 0x7ff, 0x7ff};
 
 
 

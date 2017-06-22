@@ -222,9 +222,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-#define DISABLE_RT
+//#define DISABLE_RT
 //#define DISABLE_SMT
-#define DISABLE_TMT
+//#define DISABLE_TMT
 //#define DISABLE_CAN
 #define DISABLE_SERIAL_OUT
 	selfStatusWord = INIT;
@@ -907,8 +907,8 @@ void doSMT(void const * argument)
 		  ltc68041_startCVConv(&hbms1);
 
 		  // Delay enough time but also make sure that the chip doesn't go into sleep mode
-		for(uint8_t i = 0; i < 3 * LTC_TOTAL_IC; i++){
-			osDelay(3);
+		for(uint8_t i = 0; i < 9 * LTC_TOTAL_IC; i++){
+			osDelay(1);
 			wakeup_sleep();
 		}
 
@@ -960,12 +960,14 @@ void doSMT(void const * argument)
 				Serial2_writeBuf(msg);
 #endif
 				for(uint8_t k=0; k<4; k++){
+                  if(LTC_CELL_EN[i] & (1<<(j+k))){
 					if(hbms1.board[i].CVR[j+k] > vovTo100uV(VOV) || hbms1.board[i].CVR[j+k] < vovTo100uV(VUV)){
 #ifndef DISABLE_SERIAL_OUT
 						Serial2_writeBuf(ohno);
 #endif
 						assert_bps_fault(i*3+j/4, hbms1.board[i].CVR[j+k]);
 					}
+                  }
 				}
 			}
 		}
@@ -1022,7 +1024,7 @@ void doTMT(void const * argument)
   				  if(microCelcius >= OVER_TEMPERATURE || microCelcius <= UNDER_TEMPERATURE)
   					  assert_bps_fault(tempOffset+i*2+j, microCelcius);
   #ifndef DISABLE_CAN
-  				  *(int32_t*)(&(newFrame.Data[j*4])) = microCelcius;
+  				  *(int32_t*)(&(newFrame.Data[j*4])) = __REV(microCelcius);
   #endif
   			  }
   #ifndef DISABLE_CAN

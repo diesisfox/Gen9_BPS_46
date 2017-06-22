@@ -36,6 +36,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	switchChannel(convInProg);
 	HAL_ADC_Stop_DMA(hadc);
 	HAL_ADC_Start_DMA(hadc, (uint32_t*)dmaBuffer, TEMP_MUXES); //dw about ptr types. NEVER dma more than sequenced!
+//    HAL_ADC_Start_DMA(hadc, (uint32_t*)dmaBuffer, 3); //dw about ptr types. NEVER dma more than sequenced!
 }
 
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc){

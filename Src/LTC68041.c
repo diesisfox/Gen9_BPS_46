@@ -342,6 +342,7 @@ int8_t ltc68041_Initialize(bmsChainHandleTypeDef * hbms){
 	wakeup_idle();
 	HAL_Delay(3);
 
+#ifndef DISABLE_SELF_CHECK
 	// 2. Register self tests
 	retCode = ltc68041_cvTest(hbms);
     
@@ -356,6 +357,7 @@ int8_t ltc68041_Initialize(bmsChainHandleTypeDef * hbms){
     HAL_WWDG_Refresh(&hwwdg);
 	// 4. Accuraccy check
 	retCode = ltc68041_accuracyTest(hbms);
+#endif
 
 	return retCode;
 }
